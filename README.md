@@ -155,6 +155,16 @@ Built incrementally; each phase ships fully and runnable before the next starts.
 
 See `DECISIONS.md` for deviations from the spec and why.
 
+## Troubleshooting
+
+- **`pnpm install` fails with `Cannot find matching keyid` (corepack).** The corepack
+  bundled with Node 20.14 ships rotated signing keys. Either update it
+  (`npm i -g corepack@latest`) or pin the version explicitly:
+  `COREPACK_DEFAULT_TO_LATEST=0 corepack pnpm@9.12.0 install`.
+- **Dashboard shows DB/Ollama as amber.** That's expected until you finish setup —
+  configure Neon (`DATABASE_URL` + `pnpm db:enable-vector`) and start Ollama
+  (`ollama pull nomic-embed-text`). The page auto-refreshes every 15s.
+
 ## Notes on cost & privacy
 
 Everything runs locally for free. Your files never leave your machine (local
