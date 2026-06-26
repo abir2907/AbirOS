@@ -40,7 +40,7 @@ export function CommandPalette() {
     >
       <Command.Input
         autoFocus
-        placeholder="Search modules…  (chat & knowledge search arrive in Phase 1)"
+        placeholder="Jump to a module, or ask the Command Center…"
         className="w-full border-b bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-muted-foreground"
       />
       <Command.List className="max-h-80 overflow-y-auto p-2 scrollbar-thin">
@@ -53,12 +53,13 @@ export function CommandPalette() {
           className="px-1 text-xs font-medium text-muted-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5"
         >
           <Command.Item
-            disabled
-            className="flex cursor-not-allowed items-center gap-3 rounded-md px-3 py-2 text-sm opacity-50"
+            value="ask ai command center chat"
+            onSelect={() => go('/chat')}
+            className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm aria-selected:bg-accent aria-selected:text-accent-foreground"
           >
-            <Sparkles className="size-4" />
+            <Sparkles className="size-4 text-primary" />
             Ask the AI anything…
-            <span className="ml-auto text-xs">Phase 1</span>
+            <span className="ml-auto text-xs text-muted-foreground">Command Center</span>
           </Command.Item>
         </Command.Group>
 

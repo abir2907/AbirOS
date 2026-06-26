@@ -3,6 +3,7 @@ import { authRouter } from './auth/routes.js';
 import { ingestionRouter } from './ingestion/routes.js';
 import { searchRouter } from './search/routes.js';
 import { chatRouter } from './chat/routes.js';
+import { sourcesRouter } from './sources/routes.js';
 import { knowledgeRouter } from './knowledge/routes.js';
 import { learningRouter } from './learning/routes.js';
 import { plannerRouter } from './planner/routes.js';
@@ -20,6 +21,7 @@ export function mountModules(): Router {
   const router = Router();
   router.use('/auth', authRouter);
   router.use('/ingest', ingestionRouter);
+  router.use('/sources', sourcesRouter);
   router.use('/search', searchRouter);
   router.use('/chat', chatRouter);
   router.use('/knowledge', knowledgeRouter);

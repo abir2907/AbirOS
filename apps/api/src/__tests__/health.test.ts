@@ -18,10 +18,15 @@ describe('GET /health', () => {
 describe('module stubs', () => {
   const app = createApp();
 
-  it('mounts /api/search as a scaffolded stub', async () => {
-    const res = await request(app).get('/api/search');
+  it('mounts not-yet-built modules as scaffolded stubs', async () => {
+    const res = await request(app).get('/api/planner');
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ module: 'search', status: 'scaffolded' });
+    expect(res.body).toMatchObject({ module: 'planner', status: 'scaffolded' });
+  });
+
+  it('protects real modules with auth', async () => {
+    const res = await request(app).post('/api/search').send({ query: 'x' });
+    expect(res.status).toBe(401);
   });
 
   it('404s unknown routes with the canonical error shape', async () => {

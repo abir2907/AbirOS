@@ -3,6 +3,33 @@
 Deviations from the master spec and notable architectural choices, with reasons.
 Append-only; newest at top.
 
+## Phase 1
+
+- **Hand-written SQL migrations + a tiny custom migrator (`pnpm db:migrate`)**
+  instead of `drizzle-kit generate`. The DDL uses pgvector, an HNSW index, a
+  `GENERATED` tsvector column, and GIN indexes — hand-written SQL applies these
+  predictably, where drizzle-kit's generated SQL would need editing anyway.
+  Drizzle is still the query builder and source of TS types; the SQL just has to
+  stay in sync with the schema files (both live in `packages/db`).
+
+- **In-process ingestion pipeline instead of pg-boss (for now).** The ingest
+  endpoint creates a `pending` source, returns immediately, and a fire-and-forget
+  in-process task runs extract → chunk → embed and updates `source.status` (the
+  UI polls it). Rationale: pg-boss polls the DB continuously, which the spec's own
+  Neon notes warn burns free-tier compute hours; an in-process runner is simpler,
+  free, and fully testable. `job_run` still audits each run. pg-boss will be added
+  when genuinely durable/scheduled jobs arrive (e.g. the Phase 4 daily planner).
+
+- **Auth verifies against env, not the DB.** Per spec §11 the single account's
+  bcrypt hash lives in `AUTH_PASSWORD_HASH`; `app_user` is reserved for profile
+  data. No DB round-trip on login.
+
+- **Chat orchestrator is retrieve-then-generate (robust RAG), not a native
+  tool-call loop.** Small local models call tools unreliably, so the orchestrator
+  always runs hybrid search first and streams a cited answer. The typed tool
+  registry (`chat/tools.ts`: `search_knowledge`, `list_sources`, `get_source`)
+  exists and is the basis for native multi-tool calling in later phases.
+
 ## Phase 0
 
 - **`bcryptjs` instead of native `bcrypt`.** The spec names `bcrypt`. We use the

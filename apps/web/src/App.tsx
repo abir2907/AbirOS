@@ -1,19 +1,32 @@
 import { Routes, Route, Link } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { ModulePage } from '@/components/ModulePage';
+import { RequireAuth } from '@/lib/auth';
+import { LoginPage } from '@/modules/auth/LoginPage';
 import { DashboardPage } from '@/modules/dashboard/DashboardPage';
+import { CommandCenterPage } from '@/modules/chat/CommandCenterPage';
+import { SearchPage } from '@/modules/search/SearchPage';
+import { KnowledgePage } from '@/modules/knowledge/KnowledgePage';
 import { REGISTERED_MODULES } from '@/modules/registry';
 import { Button } from '@/components/ui/button';
+
+const LIVE = new Set(['dashboard', 'chat', 'search', 'knowledge']);
 
 export default function App() {
   return (
     <Routes>
-      <Route element={<AppShell />}>
-        <Route index element={<DashboardPage />} />
-        {REGISTERED_MODULES.filter((m) => m.path !== '/').map((m) => (
-          <Route key={m.id} path={m.path.replace(/^\//, '')} element={<ModulePage module={m} />} />
-        ))}
-        <Route path="*" element={<NotFound />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<RequireAuth />}>
+        <Route element={<AppShell />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="chat" element={<CommandCenterPage />} />
+          <Route path="search" element={<SearchPage />} />
+          <Route path="knowledge" element={<KnowledgePage />} />
+          {REGISTERED_MODULES.filter((m) => !LIVE.has(m.id)).map((m) => (
+            <Route key={m.id} path={m.path.replace(/^\//, '')} element={<ModulePage module={m} />} />
+          ))}
+          <Route path="*" element={<NotFound />} />
+        </Route>
       </Route>
     </Routes>
   );

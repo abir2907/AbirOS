@@ -22,6 +22,10 @@ export function hashBytes(data: Buffer): string {
   return createHash('sha256').update(data).digest('hex');
 }
 
+export function hashString(text: string): string {
+  return createHash('sha256').update(text, 'utf8').digest('hex');
+}
+
 class LocalStorageDriver implements StorageDriver {
   readonly id = 'local';
   constructor(private readonly root: string) {}

@@ -19,6 +19,9 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "setup:password": "node scripts/setup-password.mjs",
     "db:enable-vector": "pnpm --filter @abiros/db run enable-vector",
+    "db:migrate": "pnpm --filter @abiros/db run migrate",
+    "db:seed": "pnpm --filter @abiros/db run seed",
+    "db:studio": "pnpm --filter @abiros/db run studio",
     "ai:smoke": "pnpm --filter @abiros/ai run smoke"
   },
   "devDependencies": {

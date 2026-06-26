@@ -8,9 +8,10 @@ Single-user, self-hosted, and **$0 to run**: local AI via Ollama, vectors in
 Postgres via `pgvector`, files on local disk. The only cloud piece is Neon's free
 Postgres tier (swappable for local Postgres by changing one connection string).
 
-> **Status: Phase 0 (Scaffold) complete.** The app boots, every module route
-> renders, the health page reports DB/Ollama status, and the embedding smoke test
-> runs. Feature modules fill in over Phases 1–6 (see [the build plan](#build-phases)).
+> **Status: Phase 1 (Foundation) complete.** Single-user auth, the full knowledge
+> schema, the ingestion pipeline (notes / PDFs / web pages), hybrid search, and the
+> AI Command Center (streaming, cited answers) all work end to end. Remaining
+> modules fill in over Phases 2–6 (see [the build plan](#build-phases)).
 
 ---
 
@@ -128,6 +129,35 @@ Health check directly: **http://localhost:4000/health**
 
 ---
 
+## Phase 1 — first run
+
+After `.env` is filled in (Neon + Ollama) and models are pulled:
+
+```bash
+pnpm db:migrate        # create all tables, pgvector, HNSW + full-text indexes
+pnpm setup:password    # paste AUTH_PASSWORD_HASH into .env
+pnpm db:seed           # optional: 3 sample notes so search/chat work immediately
+pnpm dev               # API :4000 + web :5173
+```
+
+Then at **http://localhost:5173**:
+
+1. **Sign in** with `AUTH_USERNAME` and the password you set.
+2. **Knowledge** → add a note, a web-page URL, or a PDF. Watch the status chip go
+   `pending → processing → ready` (it polls automatically).
+3. **Search** → type a query; results are hybrid (semantic + keyword) with source chips.
+4. **Command Center** (or ⌘/Ctrl-K → "Ask the AI") → ask a question; the answer
+   streams in and shows **citation chips** for the sources it used.
+
+**How to test this phase**
+
+```bash
+pnpm test        # chunker, RRF fusion, and auth-flow tests (no DB/Ollama needed)
+```
+
+Manual end-to-end: sign in → ingest the sample seed (or your own note) → search a
+word from it → ask the Command Center about it → confirm the answer cites the note.
+
 ## Scripts
 
 | Command | What it does |
@@ -139,14 +169,17 @@ Health check directly: **http://localhost:4000/health**
 | `pnpm lint` / `pnpm format` | Lint / Prettier-format |
 | `pnpm setup:password` | Generate a bcrypt hash for the single account |
 | `pnpm db:enable-vector` | Enable `pgvector` on Neon (direct connection) |
+| `pnpm db:migrate` | Apply SQL migrations (creates all tables + indexes) |
+| `pnpm db:seed` | Insert sample notes (needs a migrated DB + Ollama) |
+| `pnpm db:studio` | Browse the database with Drizzle Studio |
 | `pnpm ai:smoke` | Embed "hello" through the configured provider |
 
 ## Build phases
 
 Built incrementally; each phase ships fully and runnable before the next starts.
 
-0. **Scaffold** — monorepo, provider interfaces, Express boot, web shell. ← *you are here*
-1. **Foundation** — auth, ingestion pipeline (note/PDF/URL), hybrid search, AI Command Center.
+0. **Scaffold** — monorepo, provider interfaces, Express boot, web shell. ✅
+1. **Foundation** — auth, ingestion pipeline (note/PDF/URL), hybrid search, AI Command Center. ← *you are here*
 2. Second Brain completion + Developer core (screenshots/OCR, GitHub sync, code historian).
 3. Learning (summaries, flashcards, quizzes, knowledge graph).
 4. Planner (daily plan, goal simulator, university companion).

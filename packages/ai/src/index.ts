@@ -4,6 +4,8 @@
  * concrete provider directly. Provider selection is driven by env (AiConfig).
  */
 export * from './types.js';
+export * from './chunk.js';
+export * from './rrf.js';
 export {
   createLlmProvider,
   createEmbeddingProvider,

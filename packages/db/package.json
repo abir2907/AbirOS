@@ -14,11 +14,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src",
     "enable-vector": "tsx scripts/enable-vector.ts",
-    "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
+    "migrate": "tsx scripts/migrate.ts",
+    "seed": "tsx scripts/seed.ts",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@abiros/ai": "workspace:*",
     "@abiros/shared": "workspace:*",
     "drizzle-orm": "^0.38.3",
     "pg": "^8.13.1"
