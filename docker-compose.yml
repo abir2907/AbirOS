@@ -1,0 +1,46 @@
+# AbirOS local services.
+#
+# NOTE: There is NO Postgres container here — the database lives on Neon's free
+# tier (serverless Postgres). This compose file only runs the local AI server
+# (Ollama) and an optional pgAdmin pointed at Neon.
+#
+# Usage:
+#   docker compose up -d ollama
+#   docker compose --profile tools up -d   # also start pgAdmin
+#
+# If you prefer to install Ollama natively on Windows instead of Docker,
+# skip the ollama service and just run the native app — the API only needs
+# OLLAMA_BASE_URL to point at it (default http://localhost:11434).
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: abiros-ollama
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+    # Uncomment to enable NVIDIA GPU acceleration (requires nvidia-container-toolkit):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: abiros-pgadmin
+    profiles: ['tools']
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@abiros.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - '5050:80'
+    restart: unless-stopped
+
+volumes:
+  ollama-models:

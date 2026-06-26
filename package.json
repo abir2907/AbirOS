@@ -1,0 +1,35 @@
+{
+  "name": "abiros",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AbirOS — a personal AI operating system for my digital life (single-user, self-hosted, free-tier).",
+  "type": "module",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
+    "setup:password": "node scripts/setup-password.mjs",
+    "db:enable-vector": "pnpm --filter @abiros/db run enable-vector",
+    "ai:smoke": "pnpm --filter @abiros/ai run smoke"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "bcryptjs": "^2.4.3",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}
