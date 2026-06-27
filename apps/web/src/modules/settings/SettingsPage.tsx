@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Github, Database, Download, AlertTriangle, Check, X, Loader2 } from 'lucide-react';
+import { Bot, Github, Database, Download, AlertTriangle, Check, X, Loader2, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import {
   purgeData,
   DATASET_CSV_URL,
 } from '@/lib/api';
+import { notifyPermission, notifySupported, requestNotifyPermission } from '@/lib/notify';
 
 export function SettingsPage() {
   const qc = useQueryClient();
@@ -69,6 +70,8 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
+      <NotificationsCard />
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm"><Database className="size-4" /> Database usage</CardTitle>
@@ -122,6 +125,41 @@ export function SettingsPage() {
 
       <DangerZone />
     </div>
+  );
+}
+
+function NotificationsCard() {
+  const [perm, setPerm] = useState(notifyPermission());
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Bell className="size-4" /> Notifications
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex items-center gap-3">
+        {!notifySupported() ? (
+          <span className="text-sm text-muted-foreground">Not supported in this browser.</span>
+        ) : perm === 'granted' ? (
+          <Badge variant="success" className="gap-1">
+            <Check className="size-3" /> reminders on
+          </Badge>
+        ) : (
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              await requestNotifyPermission();
+              setPerm(notifyPermission());
+            }}
+          >
+            Enable due-card reminders
+          </Button>
+        )}
+        <span className="text-xs text-muted-foreground">
+          A local reminder when flashcards are due (no data leaves your device).
+        </span>
+      </CardContent>
+    </Card>
   );
 }
 

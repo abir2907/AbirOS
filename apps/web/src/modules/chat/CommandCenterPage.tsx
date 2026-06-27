@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Send, Loader2, Sparkles, MessageSquare, FileText } from 'lucide-react';
@@ -28,6 +29,17 @@ export function CommandCenterPage() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const sessionRef = useRef<string | undefined>(undefined);
+  const location = useLocation();
+  const prefilledRef = useRef(false);
+
+  // Auto-send a question passed in from the command palette.
+  useEffect(() => {
+    const q = (location.state as { q?: string } | null)?.q;
+    if (q && !prefilledRef.current) {
+      prefilledRef.current = true;
+      void send(q);
+    }
+  }, [location.state]);
 
   const patchLast = (patch: Partial<UiMessage>) =>
     setMessages((prev) => {

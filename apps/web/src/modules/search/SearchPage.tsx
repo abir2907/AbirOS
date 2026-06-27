@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Search as SearchIcon, Loader2, FileText } from 'lucide-react';
 import type { SearchHit } from '@abiros/shared';
@@ -8,12 +9,22 @@ import { Badge } from '@/components/ui/badge';
 import { search, ApiRequestError } from '@/lib/api';
 
 export function SearchPage() {
+  const location = useLocation();
   const [query, setQuery] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const mut = useMutation({
     mutationFn: (q: string) => search(q, 10),
     onSuccess: () => setSubmitted(true),
   });
+
+  // Run a query passed in from the command palette.
+  useEffect(() => {
+    const q = (location.state as { q?: string } | null)?.q;
+    if (q) {
+      setQuery(q);
+      mut.mutate(q);
+    }
+  }, [location.state]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

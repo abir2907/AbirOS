@@ -33,6 +33,7 @@ import {
   listTags,
   ApiRequestError,
 } from '@/lib/api';
+import { queueNote } from '@/lib/offline';
 
 type Tab = 'note' | 'url' | 'file';
 
@@ -63,20 +64,39 @@ function AddSource() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [offlineMsg, setOfflineMsg] = useState<string | null>(null);
   const mut = useMutation({
-    mutationFn: async () => {
-      if (tab === 'note') return ingestNote(title.trim(), content.trim());
+    mutationFn: async (): Promise<'offline' | unknown> => {
+      if (tab === 'note') {
+        const t = title.trim();
+        const c = content.trim();
+        // Capture offline → queue locally and sync on reconnect.
+        if (!navigator.onLine) {
+          queueNote(t, c);
+          return 'offline';
+        }
+        try {
+          return await ingestNote(t, c);
+        } catch (e) {
+          if (!navigator.onLine) {
+            queueNote(t, c);
+            return 'offline';
+          }
+          throw e;
+        }
+      }
       if (tab === 'url') return ingestUrl(url.trim());
       if (!file) throw new Error('Choose a file first.');
       return ingestFile(file);
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       setTitle('');
       setContent('');
       setUrl('');
       setFile(null);
       setError(null);
-      qc.invalidateQueries({ queryKey: ['sources'] });
+      setOfflineMsg(res === 'offline' ? 'Saved offline — it will sync when you reconnect.' : null);
+      if (res !== 'offline') qc.invalidateQueries({ queryKey: ['sources'] });
     },
     onError: (e) => setError(e instanceof ApiRequestError ? e.message : (e as Error).message),
   });
@@ -146,6 +166,7 @@ function AddSource() {
         )}
 
         {error && <p className="text-sm text-destructive">{error}</p>}
+        {offlineMsg && <p className="text-sm text-emerald-400">{offlineMsg}</p>}
 
         <div className="flex justify-end">
           <Button onClick={() => mut.mutate()} disabled={!canSubmit || mut.isPending}>

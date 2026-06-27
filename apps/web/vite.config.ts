@@ -1,11 +1,38 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import path from 'node:path';
 
 // Dev proxy forwards API + health calls to the Express server so the browser
 // talks to a single origin (no CORS in dev) and cookies "just work".
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['icon.svg'],
+      manifest: {
+        name: 'AbirOS — your personal AI OS',
+        short_name: 'AbirOS',
+        description: 'Your personal AI operating system for your digital life.',
+        theme_color: '#0b0b0f',
+        background_color: '#0b0b0f',
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        // Precache the app shell so it loads offline; never cache API responses.
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/, /^\/health/],
+        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+      },
+      devOptions: { enabled: false },
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

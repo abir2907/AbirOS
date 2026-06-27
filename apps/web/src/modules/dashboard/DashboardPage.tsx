@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -14,6 +15,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { getHealth, getDashboard } from '@/lib/api';
+import { notify, notifyPermission } from '@/lib/notify';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -52,6 +54,15 @@ export function DashboardPage() {
   const db = health.data?.checks.db;
   const ollama = health.data?.checks.ollama;
   const s = summary.data;
+
+  // One reminder per session if cards are due and notifications are enabled.
+  useEffect(() => {
+    const due = s?.dueFlashcards ?? 0;
+    if (due > 0 && notifyPermission() === 'granted' && !sessionStorage.getItem('abiros-notified-due')) {
+      notify('AbirOS', `You have ${due} flashcard${due === 1 ? '' : 's'} due for review.`);
+      sessionStorage.setItem('abiros-notified-due', '1');
+    }
+  }, [s?.dueFlashcards]);
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
