@@ -7,10 +7,11 @@ import { DashboardPage } from '@/modules/dashboard/DashboardPage';
 import { CommandCenterPage } from '@/modules/chat/CommandCenterPage';
 import { SearchPage } from '@/modules/search/SearchPage';
 import { KnowledgePage } from '@/modules/knowledge/KnowledgePage';
+import { DeveloperPage } from '@/modules/developer/DeveloperPage';
 import { REGISTERED_MODULES } from '@/modules/registry';
 import { Button } from '@/components/ui/button';
 
-const LIVE = new Set(['dashboard', 'chat', 'search', 'knowledge']);
+const LIVE = new Set(['dashboard', 'chat', 'search', 'knowledge', 'developer']);
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="chat" element={<CommandCenterPage />} />
           <Route path="search" element={<SearchPage />} />
           <Route path="knowledge" element={<KnowledgePage />} />
+          <Route path="developer" element={<DeveloperPage />} />
           {REGISTERED_MODULES.filter((m) => !LIVE.has(m.id)).map((m) => (
             <Route key={m.id} path={m.path.replace(/^\//, '')} element={<ModulePage module={m} />} />
           ))}

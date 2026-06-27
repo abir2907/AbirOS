@@ -4,6 +4,8 @@ import { ingestionRouter } from './ingestion/routes.js';
 import { searchRouter } from './search/routes.js';
 import { chatRouter } from './chat/routes.js';
 import { sourcesRouter } from './sources/routes.js';
+import { tagsRouter } from './tags/routes.js';
+import { projectsRouter } from './projects/routes.js';
 import { knowledgeRouter } from './knowledge/routes.js';
 import { learningRouter } from './learning/routes.js';
 import { plannerRouter } from './planner/routes.js';
@@ -22,6 +24,8 @@ export function mountModules(): Router {
   router.use('/auth', authRouter);
   router.use('/ingest', ingestionRouter);
   router.use('/sources', sourcesRouter);
+  router.use('/tags', tagsRouter);
+  router.use('/projects', projectsRouter);
   router.use('/search', searchRouter);
   router.use('/chat', chatRouter);
   router.use('/knowledge', knowledgeRouter);

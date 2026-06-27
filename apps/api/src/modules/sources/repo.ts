@@ -1,6 +1,7 @@
 import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { getDb, source, document, chunk } from '@abiros/db';
 import type { SourceSummary } from '@abiros/shared';
+import { getTagsForSource } from '../tags/repo.js';
 
 function toSummary(r: typeof source.$inferSelect): SourceSummary {
   return {
@@ -10,6 +11,7 @@ function toSummary(r: typeof source.$inferSelect): SourceSummary {
     uri: r.uri,
     status: r.status as SourceSummary['status'],
     error: r.error,
+    projectId: r.projectId ?? null,
     createdAt: r.createdAt.toISOString(),
     ingestedAt: r.ingestedAt ? r.ingestedAt.toISOString() : null,
   };
@@ -51,11 +53,14 @@ export async function getSourceDetail(id: string) {
     .from(chunk)
     .where(eq(chunk.sourceId, id));
 
+  const tags = await getTagsForSource(id);
+
   return {
     ...toSummary(src),
     metadata: src.metadata,
     chunkCount: chunkRows[0]?.chunks ?? 0,
     preview: doc?.text ? doc.text.slice(0, 2000) : null,
+    tags,
   };
 }
 

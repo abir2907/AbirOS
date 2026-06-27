@@ -9,6 +9,7 @@ export interface SourceSummary {
   uri: string | null;
   status: (typeof SOURCE_STATUSES)[number];
   error: string | null;
+  projectId: string | null;
   createdAt: string;
   ingestedAt: string | null;
 }

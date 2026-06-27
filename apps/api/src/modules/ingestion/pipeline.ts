@@ -2,8 +2,9 @@ import { chunkText } from '@abiros/ai';
 import { logger } from '../../lib/logger.js';
 import { getEmbedder, EMBED_MODEL_NAME } from '../../lib/ai.js';
 import { getStorage } from '../../lib/storage.js';
-import { extractFromUrl, extractFromPdf } from '../../lib/parsers.js';
+import { fetchUrlHtml, extractArticle, extractFromPdf, extractFromImage } from '../../lib/parsers.js';
 import * as repo from './repo.js';
+import { autoTag } from './enrich.js';
 
 const EMBED_BATCH = 16;
 
@@ -11,10 +12,13 @@ async function embedInBatches(texts: string[]): Promise<number[][]> {
   const embedder = getEmbedder();
   const out: number[][] = [];
   for (let i = 0; i < texts.length; i += EMBED_BATCH) {
-    const batch = texts.slice(i, i + EMBED_BATCH);
-    out.push(...(await embedder.embed(batch)));
+    out.push(...(await embedder.embed(texts.slice(i, i + EMBED_BATCH))));
   }
   return out;
+}
+
+function storageKeyOf(src: { metadata: unknown; hash: string | null }): string {
+  return (src.metadata as { storageKey?: string }).storageKey ?? src.hash ?? '';
 }
 
 /** Type-specific extraction → normalized document text. */
@@ -25,14 +29,25 @@ async function ensureDocument(src: NonNullable<Awaited<ReturnType<typeof repo.ge
   switch (src.type) {
     case 'web_article': {
       if (!src.uri) throw new Error('web_article source has no URI');
-      const ex = await extractFromUrl(src.uri);
-      return repo.upsertDocument(src.id, ex.text, ex.title ?? src.title, ex.metadata);
+      const html = await fetchUrlHtml(src.uri);
+      // Save the raw HTML as a local web archive (preserved even if the page changes).
+      const archiveKey = `html-${src.hash ?? src.id}`;
+      await getStorage().save(archiveKey, Buffer.from(html, 'utf8')).catch(() => {});
+      const ex = extractArticle(html, src.uri);
+      return repo.upsertDocument(src.id, ex.text, ex.title ?? src.title, {
+        ...ex.metadata,
+        archiveKey,
+      });
     }
     case 'pdf': {
-      const key = (src.metadata as { storageKey?: string }).storageKey ?? src.hash;
-      if (!key) throw new Error('pdf source has no stored file key');
-      const bytes = await getStorage().read(key);
+      const bytes = await getStorage().read(storageKeyOf(src));
       const ex = await extractFromPdf(new Uint8Array(bytes));
+      return repo.upsertDocument(src.id, ex.text, src.title, ex.metadata);
+    }
+    case 'screenshot':
+    case 'image': {
+      const bytes = await getStorage().read(storageKeyOf(src));
+      const ex = await extractFromImage(Buffer.from(bytes));
       return repo.upsertDocument(src.id, ex.text, src.title, ex.metadata);
     }
     default:
@@ -41,9 +56,9 @@ async function ensureDocument(src: NonNullable<Awaited<ReturnType<typeof repo.ge
 }
 
 /**
- * The universal ingestion pipeline: extract → chunk → embed → ready.
- * Runs in-process (fire-and-forget from the request) and updates source.status
- * so the UI can poll progress. Idempotent: re-running replaces chunks.
+ * The universal ingestion pipeline: extract → chunk → embed → enrich → ready.
+ * Runs in-process (fire-and-forget) and updates source.status so the UI can poll.
+ * Idempotent: re-running replaces chunks.
  */
 export async function runIngestionPipeline(sourceId: string): Promise<void> {
   const startedAt = Date.now();
@@ -60,6 +75,9 @@ export async function runIngestionPipeline(sourceId: string): Promise<void> {
       await repo.insertChunksWithEmbeddings(doc.id, sourceId, chunks, vectors, EMBED_MODEL_NAME);
     }
 
+    // Best-effort auto-tagging — never blocks readiness.
+    await autoTag(sourceId, doc.text).catch(() => {});
+
     await repo.setStatus(sourceId, 'ready', { ingestedAt: new Date() });
     await repo.recordJob('ingest', sourceId, 'done', {
       finishedAt: new Date(),
@@ -69,9 +87,9 @@ export async function runIngestionPipeline(sourceId: string): Promise<void> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await repo.setStatus(sourceId, 'failed', { error: message }).catch(() => {});
-    await repo.recordJob('ingest', sourceId, 'failed', { error: message, finishedAt: new Date() }).catch(
-      () => {},
-    );
+    await repo
+      .recordJob('ingest', sourceId, 'failed', { error: message, finishedAt: new Date() })
+      .catch(() => {});
     logger.error({ sourceId, err: message }, 'ingestion failed');
   }
 }

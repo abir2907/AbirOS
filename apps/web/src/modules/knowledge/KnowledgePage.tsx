@@ -10,6 +10,9 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Tag,
+  FolderGit2,
+  Plus,
 } from 'lucide-react';
 import type { SourceSummary } from '@abiros/shared';
 import { Button } from '@/components/ui/button';
@@ -19,15 +22,19 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import {
+  createProject,
   deleteSource,
   ingestFile,
   ingestNote,
   ingestUrl,
+  linkSource,
+  listProjects,
   listSources,
+  listTags,
   ApiRequestError,
 } from '@/lib/api';
 
-type Tab = 'note' | 'url' | 'pdf';
+type Tab = 'note' | 'url' | 'file';
 
 export function KnowledgePage() {
   return (
@@ -35,10 +42,13 @@ export function KnowledgePage() {
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Knowledge</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Add anything to your second brain. Everything is chunked, embedded, and made searchable.
+          Add anything to your second brain — notes, web pages, PDFs, or screenshots (OCR'd). Each
+          source is chunked, embedded, auto-tagged, and made searchable.
         </p>
       </header>
       <AddSource />
+      <ProjectsPanel />
+      <TagCloud />
       <SourceList />
     </div>
   );
@@ -57,7 +67,7 @@ function AddSource() {
     mutationFn: async () => {
       if (tab === 'note') return ingestNote(title.trim(), content.trim());
       if (tab === 'url') return ingestUrl(url.trim());
-      if (!file) throw new Error('Choose a PDF first.');
+      if (!file) throw new Error('Choose a file first.');
       return ingestFile(file);
     },
     onSuccess: () => {
@@ -74,14 +84,14 @@ function AddSource() {
   const tabs: { id: Tab; label: string; icon: typeof StickyNote }[] = [
     { id: 'note', label: 'Note', icon: StickyNote },
     { id: 'url', label: 'Web page', icon: Link2 },
-    { id: 'pdf', label: 'PDF', icon: FileText },
+    { id: 'file', label: 'PDF / Image', icon: FileText },
   ];
 
   const canSubmit =
     tab === 'note' ? title.trim() && content.trim() : tab === 'url' ? url.trim() : !!file;
 
   return (
-    <Card className="mb-8">
+    <Card className="mb-6">
       <CardHeader>
         <CardTitle className="text-base">Add a source</CardTitle>
       </CardHeader>
@@ -122,13 +132,13 @@ function AddSource() {
             onChange={(e) => setUrl(e.target.value)}
           />
         )}
-        {tab === 'pdf' && (
+        {tab === 'file' && (
           <label className="flex cursor-pointer items-center gap-3 rounded-md border border-dashed px-4 py-6 text-sm text-muted-foreground hover:bg-accent">
             <Upload className="size-5" />
-            <span>{file ? file.name : 'Choose a PDF (max 25 MB)'}</span>
+            <span>{file ? file.name : 'Choose a PDF or image — screenshots are OCR’d (max 25 MB)'}</span>
             <input
               type="file"
-              accept="application/pdf"
+              accept="application/pdf,image/*"
               className="hidden"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
@@ -145,6 +155,70 @@ function AddSource() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function ProjectsPanel() {
+  const qc = useQueryClient();
+  const { data } = useQuery({ queryKey: ['projects'], queryFn: listProjects, retry: false });
+  const [name, setName] = useState('');
+  const create = useMutation({
+    mutationFn: () => createProject({ name: name.trim() }),
+    onSuccess: () => {
+      setName('');
+      qc.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+
+  return (
+    <div className="mb-6">
+      <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <FolderGit2 className="size-4" /> Projects
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {data?.projects.map((p) => (
+          <Badge key={p.id} variant="secondary">
+            {p.name}
+          </Badge>
+        ))}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (name.trim()) create.mutate();
+          }}
+          className="flex items-center gap-1.5"
+        >
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="New project…"
+            className="h-7 w-40 text-xs"
+          />
+          <Button type="submit" size="icon" variant="ghost" className="size-7" disabled={!name.trim()}>
+            <Plus className="size-4" />
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function TagCloud() {
+  const { data } = useQuery({ queryKey: ['tags'], queryFn: listTags, retry: false });
+  if (!data || data.tags.length === 0) return null;
+  return (
+    <div className="mb-6">
+      <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <Tag className="size-4" /> Auto-tags
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {data.tags.map((t) => (
+          <Badge key={t.name} variant="outline" className="text-[11px]">
+            {t.name} <span className="ml-1 text-muted-foreground">{t.count}</span>
+          </Badge>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -179,14 +253,19 @@ function SourceList() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['sources'],
     queryFn: () => listSources(50, 0),
-    // Poll while anything is still processing.
     refetchInterval: (q) =>
       q.state.data?.items.some((s) => s.status === 'pending' || s.status === 'processing')
         ? 2000
         : false,
   });
+  const projects = useQuery({ queryKey: ['projects'], queryFn: listProjects, retry: false });
   const del = useMutation({
     mutationFn: deleteSource,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sources'] }),
+  });
+  const link = useMutation({
+    mutationFn: ({ sourceId, projectId }: { sourceId: string; projectId: string | null }) =>
+      linkSource(sourceId, projectId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['sources'] }),
   });
 
@@ -196,7 +275,7 @@ function SourceList() {
   if (!data || data.items.length === 0)
     return (
       <div className="rounded-xl border border-dashed py-12 text-center text-sm text-muted-foreground">
-        No sources yet. Add a note, web page, or PDF above to get started.
+        No sources yet. Add a note, web page, PDF, or screenshot above to get started.
       </div>
     );
 
@@ -206,10 +285,7 @@ function SourceList() {
         {data.total} source{data.total === 1 ? '' : 's'}
       </div>
       {data.items.map((s) => (
-        <div
-          key={s.id}
-          className="flex items-center gap-3 rounded-lg border bg-card/50 px-4 py-3"
-        >
+        <div key={s.id} className="flex items-center gap-3 rounded-lg border bg-card/50 px-4 py-3">
           <FileText className="size-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-medium">{s.title}</div>
@@ -217,6 +293,19 @@ function SourceList() {
               {s.type} · {new Date(s.createdAt).toLocaleString()}
             </div>
           </div>
+          <select
+            value={s.projectId ?? ''}
+            onChange={(e) => link.mutate({ sourceId: s.id, projectId: e.target.value || null })}
+            className="h-7 max-w-32 rounded-md border bg-transparent px-2 text-xs text-muted-foreground focus:outline-none"
+            title="Assign to project"
+          >
+            <option value="">No project</option>
+            {projects.data?.projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
           <StatusBadge s={s} />
           <Button
             variant="ghost"

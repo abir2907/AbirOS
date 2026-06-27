@@ -28,13 +28,19 @@ export const source = pgTable(
     byteSize: bigint('byte_size', { mode: 'number' }),
     hash: text('hash'),
     metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}).notNull(),
+    // FK to project(id) is enforced in the SQL migration (avoids a schema import cycle).
+    projectId: uuid('project_id'),
     ingestedAt: timestamp('ingested_at', { withTimezone: true }),
     status: sourceStatusEnum('status').notNull().default('pending'),
     error: text('error'),
     ...timestamps,
     ...softDelete,
   },
-  (t) => [index('source_hash_idx').on(t.hash), index('source_type_idx').on(t.type)],
+  (t) => [
+    index('source_hash_idx').on(t.hash),
+    index('source_type_idx').on(t.type),
+    index('source_project_idx').on(t.projectId),
+  ],
 );
 
 export const document = pgTable(

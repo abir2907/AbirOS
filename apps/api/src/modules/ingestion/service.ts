@@ -49,16 +49,19 @@ export async function ingestUrl(input: { url: string }) {
 }
 
 export async function ingestFile(file: { buffer: Buffer; originalname: string; mimetype: string }) {
-  if (file.mimetype !== 'application/pdf') {
-    throw HttpError.validation('Only PDF files are supported in Phase 1.');
+  const isPdf = file.mimetype === 'application/pdf';
+  const isImage = file.mimetype.startsWith('image/');
+  if (!isPdf && !isImage) {
+    throw HttpError.validation('Only PDF and image files are supported.');
   }
-  const hash = hashBytes(file.buffer);
+  const hash = hashBytes(file.buffer); // exact-content dedupe
   const dup = await repo.findReadyByHash(hash);
   if (dup) return dup;
 
   const { uri } = await getStorage().save(hash, file.buffer);
   const src = await repo.createSource({
-    type: 'pdf',
+    // Images are OCR'd as "screenshots" (the Smart Screenshot Manager).
+    type: isPdf ? 'pdf' : 'screenshot',
     title: file.originalname,
     uri,
     mime: file.mimetype,

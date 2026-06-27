@@ -1,6 +1,7 @@
 import type { ToolDef } from '@abiros/ai';
 import { hybridSearch } from '../search/service.js';
 import { listSources, getSourceDetail } from '../sources/repo.js';
+import { searchCode, recentActivity } from '../developer/repo.js';
 
 /**
  * The agent tool registry — the typed functions the AI Command Center can call.
@@ -54,6 +55,32 @@ export const AGENT_TOOLS: Record<string, AgentTool> = {
       },
     },
     execute: (args) => getSourceDetail(String(args.id ?? '')),
+  },
+
+  search_code: {
+    def: {
+      name: 'search_code',
+      description:
+        "Code Historian — search the user's synced GitHub commit messages and repos (e.g. 'find every authentication implementation').",
+      parameters: {
+        type: 'object',
+        properties: { query: { type: 'string' }, k: { type: 'number' } },
+        required: ['query'],
+      },
+    },
+    execute: (args) => searchCode(String(args.query ?? ''), Number(args.k ?? 20)),
+  },
+
+  get_github_activity: {
+    def: {
+      name: 'get_github_activity',
+      description: 'Recent GitHub commit activity for the user within the last N days (default 30).',
+      parameters: {
+        type: 'object',
+        properties: { days: { type: 'number' } },
+      },
+    },
+    execute: (args) => recentActivity(Number(args.days ?? 30)),
   },
 };
 

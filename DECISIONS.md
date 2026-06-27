@@ -3,6 +3,32 @@
 Deviations from the master spec and notable architectural choices, with reasons.
 Append-only; newest at top.
 
+## Phase 2
+
+- **Code Historian uses full-text search, not embeddings.** Commit messages + repo
+  metadata get a generated `tsvector` and are searched with Postgres full-text —
+  not embedded. Embedding thousands of commits would blow the Neon free-tier
+  storage budget (the spec's own warning). Hybrid/embedding code search can be
+  added later, opt-in, for selected repos.
+
+- **`git_commit` table (not `commit`).** `commit` is a SQL keyword; the table is
+  named `git_commit` and exported from Drizzle as `gitCommit`.
+
+- **GitHub sync is bounded** — 50 repos (most recently pushed) × 100 commits each.
+  Keeps within rate limits and storage; deeper history can be added on demand.
+
+- **OCR runs in-process via tesseract.js** (pure JS/WASM, free, local). The `eng`
+  trained-data downloads once on first use and is then cached. Uploaded images are
+  ingested as `screenshot` sources through the same pipeline.
+
+- **Web archive = raw HTML saved to local disk** during URL ingestion (keyed
+  `html-<hash>`), so the page is preserved even if it later changes; only the
+  extracted text + embeddings go to Neon.
+
+- **`source.project_id` FK is declared in SQL only**, not in the Drizzle table
+  helper, to avoid a schema import cycle (project ↔ source). Drizzle still has the
+  plain `projectId` column for queries.
+
 ## Phase 1
 
 - **Hand-written SQL migrations + a tiny custom migrator (`pnpm db:migrate`)**

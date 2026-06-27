@@ -8,10 +8,10 @@ Single-user, self-hosted, and **$0 to run**: local AI via Ollama, vectors in
 Postgres via `pgvector`, files on local disk. The only cloud piece is Neon's free
 Postgres tier (swappable for local Postgres by changing one connection string).
 
-> **Status: Phase 1 (Foundation) complete.** Single-user auth, the full knowledge
-> schema, the ingestion pipeline (notes / PDFs / web pages), hybrid search, and the
-> AI Command Center (streaming, cited answers) all work end to end. Remaining
-> modules fill in over Phases 2–6 (see [the build plan](#build-phases)).
+> **Status: Phase 2 complete.** On top of Phase 1: screenshot/image ingestion with
+> OCR, web-page archiving, auto-tagging, project memory, and the **Developer**
+> module — GitHub sync, Code Historian (commit/repo search), and a Career Analyzer.
+> Remaining modules fill in over Phases 3–6 (see [the build plan](#build-phases)).
 
 ---
 
@@ -158,6 +158,24 @@ pnpm test        # chunker, RRF fusion, and auth-flow tests (no DB/Ollama needed
 Manual end-to-end: sign in → ingest the sample seed (or your own note) → search a
 word from it → ask the Command Center about it → confirm the answer cites the note.
 
+## Phase 2 — what's new
+
+After `pnpm db:migrate` applies the new tables, two areas light up:
+
+**Knowledge** now also accepts **screenshots/images** (OCR'd locally with
+tesseract.js), **archives** the raw HTML of web pages, **auto-tags** each source
+with the LLM, and supports **project memory** (create a project, assign sources).
+
+**Developer** — connect GitHub to index your code history:
+1. Create a token at *GitHub → Settings → Developer settings → Personal access
+   tokens (classic)* with scopes **`repo`** and **`read:user`**.
+2. Put it in `.env` as `GITHUB_TOKEN=...` and restart `pnpm dev`.
+3. Open **Developer → Sync GitHub**. Then:
+   - **Code Historian** — search every commit message + repo ("find auth", "migration").
+   - **Career Analyzer** — language mix (by bytes) and commits-over-time charts.
+
+The Command Center also gains `search_code` and `get_github_activity` agent tools.
+
 ## Scripts
 
 | Command | What it does |
@@ -179,8 +197,8 @@ word from it → ask the Command Center about it → confirm the answer cites th
 Built incrementally; each phase ships fully and runnable before the next starts.
 
 0. **Scaffold** — monorepo, provider interfaces, Express boot, web shell. ✅
-1. **Foundation** — auth, ingestion pipeline (note/PDF/URL), hybrid search, AI Command Center. ← *you are here*
-2. Second Brain completion + Developer core (screenshots/OCR, GitHub sync, code historian).
+1. **Foundation** — auth, ingestion pipeline (note/PDF/URL), hybrid search, AI Command Center. ✅
+2. **Second Brain + Developer** — screenshots/OCR, web archive, auto-tagging, project memory, GitHub sync, Code Historian, Career Analyzer. ← *you are here*
 3. Learning (summaries, flashcards, quizzes, knowledge graph).
 4. Planner (daily plan, goal simulator, university companion).
 5. Life (metrics, expense detective, timeline, dataset export).

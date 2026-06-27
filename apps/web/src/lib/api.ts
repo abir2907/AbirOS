@@ -89,6 +89,7 @@ export interface SourceDetail extends SourceSummary {
   metadata: Record<string, unknown>;
   chunkCount: number;
   preview: string | null;
+  tags: string[];
 }
 export const getSource = (id: string) => apiGet<SourceDetail>(`/api/sources/${id}`);
 export const deleteSource = (id: string) => apiDelete<{ ok: true }>(`/api/sources/${id}`);
@@ -150,3 +151,54 @@ export async function streamChat(
     }
   }
 }
+
+// ── Tags ───────────────────────────────────────────────────────────────────
+export const listTags = () => apiGet<{ tags: { name: string; count: number }[] }>('/api/tags');
+
+// ── Projects ─────────────────────────────────────────────────────────────────
+export interface ProjectRow {
+  id: string;
+  name: string;
+  description: string | null;
+  architecture: string | null;
+  apiNotes: string | null;
+  decisions: string | null;
+}
+export const listProjects = () => apiGet<{ projects: ProjectRow[] }>('/api/projects');
+export const createProject = (body: { name: string; description?: string }) =>
+  apiPost<ProjectRow>('/api/projects', body);
+export const linkSource = (sourceId: string, projectId: string | null) =>
+  apiPost<{ ok: true }>('/api/projects/link', { sourceId, projectId });
+
+// ── Developer (GitHub) ───────────────────────────────────────────────────────
+export interface RepoRow {
+  id: string;
+  name: string;
+  fullName: string;
+  description: string | null;
+  url: string | null;
+  primaryLanguage: string | null;
+  languages: Record<string, number>;
+  stars: number;
+  pushedAt: string | null;
+}
+export interface CodeHit {
+  kind: 'commit' | 'repo';
+  title: string;
+  detail: string;
+  url: string | null;
+  date: string | null;
+}
+export interface CareerInsights {
+  repoCount: number;
+  commitCount: number;
+  starCount: number;
+  languages: { name: string; bytes: number; share: number }[];
+  commitsByMonth: { month: string; count: number }[];
+}
+export const syncGithub = () =>
+  apiPost<{ login: string; repos: number; commits: number }>('/api/developer/github/sync');
+export const listRepos = () => apiGet<{ repos: RepoRow[] }>('/api/developer/repos');
+export const searchCode = (query: string) =>
+  apiPost<{ query: string; hits: CodeHit[] }>('/api/developer/code/search', { query });
+export const getAnalyzer = () => apiGet<CareerInsights>('/api/developer/analyzer');

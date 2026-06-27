@@ -25,8 +25,10 @@ describe('module stubs', () => {
   });
 
   it('protects real modules with auth', async () => {
-    const res = await request(app).post('/api/search').send({ query: 'x' });
-    expect(res.status).toBe(401);
+    for (const path of ['/api/search', '/api/developer/repos', '/api/projects', '/api/tags']) {
+      const res = await request(app).get(path);
+      expect(res.status, `${path} should require auth`).toBe(401);
+    }
   });
 
   it('404s unknown routes with the canonical error shape', async () => {
