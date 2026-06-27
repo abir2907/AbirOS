@@ -28,7 +28,8 @@ export function SettingsPage() {
   const flip = (id: string) => {
     if (!s) return;
     const set = new Set(s.enabledModules);
-    set.has(id) ? set.delete(id) : set.add(id);
+    if (set.has(id)) set.delete(id);
+    else set.add(id);
     toggleMod.mutate([...set]);
   };
 

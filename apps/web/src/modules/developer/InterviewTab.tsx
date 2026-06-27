@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- the Web Speech API has no standard TS types */
 import { useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Loader2, Mic, MicOff, Send, MessageSquareText } from 'lucide-react';

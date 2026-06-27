@@ -28,9 +28,12 @@ export async function createMetric(name: string, unit?: string) {
   const [row] = await db
     .insert(metric)
     .values({ name, unit })
-    .onConflictDoUpdate({ target: metric.name, set: { unit } })
+    .onConflictDoNothing({ target: metric.name })
     .returning();
-  return row!;
+  if (row) return row;
+  // Already exists (same name) — return it.
+  const [existing] = await db.select().from(metric).where(eq(metric.name, name)).limit(1);
+  return existing!;
 }
 
 export async function addPoint(metricId: string, value: number, recordedAt?: Date, note?: string) {

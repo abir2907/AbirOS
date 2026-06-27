@@ -1,37 +1,74 @@
 import type { ChatStreamEvent, Citation, SearchHit } from '@abiros/shared';
 import { getLlm } from '../../lib/ai.js';
+import { logger } from '../../lib/logger.js';
 import { hybridSearch } from '../search/service.js';
+import { AGENT_TOOLS } from './tools.js';
 import * as repo from './repo.js';
 
-const SYSTEM_PROMPT = `You are AbirOS, a personal AI assistant with access to the user's own knowledge base (their notes, PDFs, and saved articles).
+const MAX_STEPS = 5;
+
+const ANSWER_SYSTEM = `You are AbirOS, a personal AI assistant. Answer the user using the gathered information below — knowledge snippets from their own notes/documents and/or live results from their calendar, tasks, goals, code, flashcards, expenses, and metrics.
 
 Rules:
-- Answer using ONLY the provided context snippets. Each snippet is labelled with a [n] citation marker.
-- When you use information from a snippet, cite it inline as [n].
-- If the context does not contain the answer, say so plainly — do not invent facts.
-- Be concise and direct. Use markdown when helpful.`;
+- Knowledge snippets are labelled [n]; cite them inline as [n] when you use them.
+- Use the tool results to answer questions about the user's schedule, tasks, goals, spending, due cards, and so on.
+- If the gathered information does not contain the answer, say so plainly — do not invent facts.
+- Be concise and well-structured; use markdown (e.g. a checklist when building a plan).`;
+
+const TOOL_MENU = Object.values(AGENT_TOOLS)
+  .map((t) => `- ${t.def.name}: ${t.def.description}`)
+  .join('\n');
+
+const PLANNER_SYSTEM = `You are AbirOS's planner. You decide which tools to call to gather what's needed to answer the user's request. You can call tools across multiple turns.
+
+Available tools:
+${TOOL_MENU}
+
+Respond with EXACTLY ONE JSON object and nothing else:
+- To call a tool: {"tool":"<name>","args":{ ... }}
+- When you have gathered enough: {"done":true}
+
+Rules:
+- For anything about the user's own notes, documents, code, calendar, tasks, goals, flashcards, expenses, or metrics, call the relevant tool(s) first.
+- A broad request (e.g. "prepare me for tomorrow") may need several tools — calendar, tasks, due flashcards, recent github activity.
+- Never call the same tool with the same arguments twice.
+- Return {"done":true} as soon as you have enough; do not over-call.`;
 
 /** Build numbered citations (one per distinct source) + a context block for the prompt. */
 function buildContext(hits: SearchHit[]): { citations: Citation[]; block: string } {
   const nBySource = new Map<string, number>();
   const citations: Citation[] = [];
+  const lines: string[] = [];
   for (const h of hits) {
     if (!nBySource.has(h.sourceId)) {
       const n = citations.length + 1;
       nBySource.set(h.sourceId, n);
       citations.push({ n, sourceId: h.sourceId, title: h.sourceTitle, type: h.sourceType });
     }
+    lines.push(`[${nBySource.get(h.sourceId)}] (${h.sourceTitle})\n${h.text}`);
   }
-  const block = hits
-    .map((h) => `[${nBySource.get(h.sourceId)}] (${h.sourceTitle})\n${h.text}`)
-    .join('\n\n---\n\n');
-  return { citations, block };
+  return { citations, block: lines.join('\n\n---\n\n') };
 }
 
+function parseJson(content: string): { tool?: string; args?: Record<string, unknown>; done?: boolean } | null {
+  try {
+    return JSON.parse(content.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim());
+  } catch {
+    return null;
+  }
+}
+
+const truncate = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}…` : s);
+
 /**
- * The orchestrator: retrieve relevant context (the search_knowledge tool), then
- * stream a cited answer. Persists both the user and assistant messages. Robust
- * with any local model since it does not depend on native tool-calling.
+ * The AI Command Center orchestrator — an autonomous multi-tool agent loop.
+ *
+ * Phase A: a JSON-instructed planning loop where the model calls tools (across
+ * turns) to gather data from any module — e.g. calendar + tasks + flashcards +
+ * github for "prepare me for tomorrow". Provider-agnostic (no dependency on
+ * native tool-calling) so it works with local models.
+ * Phase B: streams a final, cited answer composed from everything gathered.
+ * A search_knowledge fallback guarantees knowledge questions stay grounded.
  */
 export async function streamAnswer(
   sessionId: string,
@@ -39,24 +76,83 @@ export async function streamAnswer(
   send: (event: ChatStreamEvent) => void,
 ): Promise<void> {
   await repo.addMessage(sessionId, 'user', userContent);
+  const provider = getLlm();
 
-  send({ type: 'status', message: 'Searching your knowledge base…' });
-  const hits = await hybridSearch(userContent, 8);
-  const { citations, block } = buildContext(hits);
+  const searchHits: SearchHit[] = [];
+  const toolNotes: string[] = [];
+  const called = new Set<string>();
+  const transcript: { role: 'user' | 'assistant'; content: string }[] = [
+    { role: 'user', content: userContent },
+  ];
+
+  // ── Phase A: autonomous tool loop ──────────────────────────────────────────
+  try {
+    for (let step = 0; step < MAX_STEPS; step++) {
+      const res = await provider.chat({ system: PLANNER_SYSTEM, messages: transcript, json: true });
+      const decision = parseJson(res.content);
+      if (!decision || decision.done || !decision.tool) break;
+
+      const tool = AGENT_TOOLS[decision.tool];
+      if (!tool) break;
+      const args = decision.args && typeof decision.args === 'object' ? decision.args : {};
+      const sig = `${decision.tool}:${JSON.stringify(args)}`;
+      if (called.has(sig)) break; // avoid loops / duplicate calls
+      called.add(sig);
+
+      send({ type: 'status', message: `Using ${decision.tool}…` });
+      let out: unknown;
+      try {
+        out = await tool.execute(args);
+      } catch (e) {
+        out = { error: e instanceof Error ? e.message : 'tool failed' };
+      }
+
+      let outText: string;
+      if (decision.tool === 'search_knowledge' && Array.isArray(out)) {
+        const hits = out as SearchHit[];
+        searchHits.push(...hits);
+        outText = hits.map((h) => `(${h.sourceTitle}) ${truncate(h.text, 240)}`).join('\n') || '(no matches)';
+      } else {
+        outText = truncate(JSON.stringify(out), 1500);
+        toolNotes.push(`${decision.tool} →\n${outText}`);
+      }
+
+      transcript.push({ role: 'assistant', content: res.content });
+      transcript.push({
+        role: 'user',
+        content: `Tool "${decision.tool}" returned:\n${outText}\n\nCall another tool or return {"done":true}.`,
+      });
+    }
+  } catch (err) {
+    logger.warn({ err: err instanceof Error ? err.message : err }, 'agent planning loop aborted');
+  }
+
+  // Fallback: if no tool gathered anything, ground the answer with hybrid search.
+  if (searchHits.length === 0 && toolNotes.length === 0) {
+    send({ type: 'status', message: 'Searching your knowledge base…' });
+    try {
+      searchHits.push(...(await hybridSearch(userContent, 8)));
+    } catch (err) {
+      logger.warn({ err: err instanceof Error ? err.message : err }, 'fallback search failed');
+    }
+  }
+
+  // ── Phase B: stream the final, cited answer ────────────────────────────────
+  const { citations, block } = buildContext(searchHits);
   send({ type: 'citations', citations });
 
-  const prompt =
-    citations.length > 0
-      ? `Context snippets:\n\n${block}\n\n---\n\nQuestion: ${userContent}`
-      : `The knowledge base returned no relevant snippets for this question.\n\nQuestion: ${userContent}`;
+  const parts: string[] = [];
+  if (block) parts.push(`Knowledge snippets:\n${block}`);
+  if (toolNotes.length) parts.push(`Tool results:\n${toolNotes.join('\n\n')}`);
+  const context = parts.join('\n\n---\n\n') || '(no relevant data found)';
+  const prompt = `${context}\n\n---\n\nUser request: ${userContent}`;
 
   send({ type: 'status', message: 'Thinking…' });
-  const provider = getLlm();
   let full = '';
   try {
     if (provider.stream) {
       for await (const chunk of provider.stream({
-        system: SYSTEM_PROMPT,
+        system: ANSWER_SYSTEM,
         messages: [{ role: 'user', content: prompt }],
       })) {
         if (chunk.delta) {
@@ -65,10 +161,7 @@ export async function streamAnswer(
         }
       }
     } else {
-      const res = await provider.chat({
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: prompt }],
-      });
+      const res = await provider.chat({ system: ANSWER_SYSTEM, messages: [{ role: 'user', content: prompt }] });
       full = res.content;
       send({ type: 'token', value: full });
     }
@@ -80,9 +173,6 @@ export async function streamAnswer(
   }
 
   const assistant = await repo.addMessage(sessionId, 'assistant', full, citations);
-
-  // Name the session from its first user message (only if still untitled).
   await repo.setTitleIfDefault(sessionId, userContent.slice(0, 60)).catch(() => {});
-
   send({ type: 'done', messageId: assistant.id });
 }
