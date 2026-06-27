@@ -2,7 +2,21 @@ import { desc, eq } from 'drizzle-orm';
 import { getDb, resumeVersion } from '@abiros/db';
 import { getLlm } from '../../lib/ai.js';
 import { HttpError } from '../../lib/errors.js';
+import { extractFromPdf } from '../../lib/parsers.js';
 import { careerInsights, listRepos } from './repo.js';
+
+/** Upload your own resume PDF — extract its text into a resume version to analyse/tailor. */
+export async function uploadResume(file: { buffer: Buffer; originalname: string; mimetype: string }) {
+  if (file.mimetype !== 'application/pdf') {
+    throw HttpError.validation('Please upload a PDF resume.');
+  }
+  const ex = await extractFromPdf(new Uint8Array(file.buffer));
+  const [row] = await getDb()
+    .insert(resumeVersion)
+    .values({ label: `Uploaded: ${file.originalname}`.slice(0, 60), content: ex.text })
+    .returning();
+  return row!;
+}
 
 /** Build a resume draft from synced GitHub activity. */
 export async function generateResume() {

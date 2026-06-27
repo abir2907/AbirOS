@@ -1,7 +1,10 @@
 import { Router, type Router as RouterType } from 'express';
 import { z } from 'zod';
+import multer from 'multer';
 import { requireAuth } from '../../middleware/auth.js';
 import { HttpError } from '../../lib/errors.js';
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 import { codeSearchSchema, activityQuerySchema } from './schemas.js';
 import { syncGithub } from './service.js';
 import { listRepos, searchCode, careerInsights, recentActivity, timeMachine } from './repo.js';
@@ -11,6 +14,7 @@ import {
   tailorResume,
   listResumeVersions,
   getResumeVersion,
+  uploadResume,
 } from './resume.js';
 import { syncLeetcode, getLeetcodeProfile, searchSolvedProblems, weakTopics } from './leetcode.js';
 import { analyzeResume } from './resumeAnalysis.js';
@@ -102,11 +106,21 @@ developerRouter.get('/leetcode/weak-topics', async (_req, res, next) => {
   }
 });
 
-// ── Resume analysis ──────────────────────────────────────────────────────────
+// ── Resume upload + analysis ──────────────────────────────────────────────────
+developerRouter.post('/resume/upload', upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) throw HttpError.validation('No file uploaded (field name must be "file").');
+    res.status(201).json(await uploadResume(req.file));
+  } catch (err) {
+    next(err);
+  }
+});
 developerRouter.post('/resume/analyze', async (req, res, next) => {
   try {
-    const { targetJd } = z.object({ targetJd: z.string().optional() }).parse(req.body ?? {});
-    res.json(await analyzeResume(targetJd));
+    const { targetJd, versionId } = z
+      .object({ targetJd: z.string().optional(), versionId: z.string().uuid().optional() })
+      .parse(req.body ?? {});
+    res.json(await analyzeResume(targetJd, versionId));
   } catch (err) {
     next(err);
   }

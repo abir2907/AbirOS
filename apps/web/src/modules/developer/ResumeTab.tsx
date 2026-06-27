@@ -7,7 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { analyzeResume, ApiRequestError, generateResume, getResume, listResumes, tailorResume } from '@/lib/api';
+import {
+  analyzeResume,
+  ApiRequestError,
+  generateResume,
+  getResume,
+  listResumes,
+  tailorResume,
+  uploadResume,
+} from '@/lib/api';
+import { Upload } from 'lucide-react';
 
 export function ResumeTab() {
   const qc = useQueryClient();
@@ -30,7 +39,16 @@ export function ResumeTab() {
       setSelected(v.id);
     },
   });
-  const analyze = useMutation({ mutationFn: () => analyzeResume(jd.trim() || undefined) });
+  const uploadMut = useMutation({
+    mutationFn: (file: File) => uploadResume(file),
+    onSuccess: (v) => {
+      qc.invalidateQueries({ queryKey: ['resumes'] });
+      setSelected(v.id);
+    },
+  });
+  const analyze = useMutation({
+    mutationFn: () => analyzeResume(jd.trim() || undefined, selected || undefined),
+  });
   const current = useQuery({
     queryKey: ['resume', selected],
     queryFn: () => getResume(selected!),
@@ -40,13 +58,25 @@ export function ResumeTab() {
   return (
     <div className="grid gap-6 md:grid-cols-[220px_1fr]">
       <div>
-        <Button className="mb-3 w-full" onClick={() => gen.mutate()} disabled={gen.isPending}>
+        <label className="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+          {uploadMut.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+          Upload resume PDF
+          <input
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && uploadMut.mutate(e.target.files[0])}
+          />
+        </label>
+        <Button className="mb-3 w-full" variant="secondary" onClick={() => gen.mutate()} disabled={gen.isPending}>
           {gen.isPending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
           Generate from GitHub
         </Button>
-        {gen.isError && (
+        {(gen.isError || uploadMut.isError) && (
           <p className="mb-2 text-xs text-destructive">
-            {gen.error instanceof ApiRequestError ? gen.error.message : 'Failed.'}
+            {(gen.error ?? uploadMut.error) instanceof ApiRequestError
+              ? (gen.error ?? uploadMut.error)!.message
+              : 'Failed — PDF resumes only.'}
           </p>
         )}
         <div className="space-y-1.5">

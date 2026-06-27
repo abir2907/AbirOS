@@ -1,4 +1,4 @@
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { getDb, resumeVersion, resumeAnalysis } from '@abiros/db';
 import { getLlm } from '../../lib/ai.js';
 import { HttpError } from '../../lib/errors.js';
@@ -6,11 +6,13 @@ import { careerInsights } from './repo.js';
 import { getLeetcodeProfile } from './leetcode.js';
 import { listAccomplishments } from '../profile/repo.js';
 
-/** Analyze the latest resume version against the user's REAL AbirOS data (+ optional JD). */
-export async function analyzeResume(targetJd?: string) {
+/** Analyze a resume version (default: latest) against the user's REAL data (+ optional JD). */
+export async function analyzeResume(targetJd?: string, versionId?: string) {
   const db = getDb();
-  const [latest] = await db.select().from(resumeVersion).orderBy(desc(resumeVersion.createdAt)).limit(1);
-  if (!latest) throw HttpError.validation('Generate a resume first (Developer → Resume).');
+  const [latest] = versionId
+    ? await db.select().from(resumeVersion).where(eq(resumeVersion.id, versionId)).limit(1)
+    : await db.select().from(resumeVersion).orderBy(desc(resumeVersion.createdAt)).limit(1);
+  if (!latest) throw HttpError.validation('Upload or generate a resume first (Developer → Resume).');
 
   const [insights, lc, accomplishments] = await Promise.all([
     careerInsights(),

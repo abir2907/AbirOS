@@ -498,8 +498,15 @@ export interface ResumeAnalysisResult {
   suggestedBullets?: string[];
   alignment?: string;
 }
-export const analyzeResume = (targetJd?: string) =>
-  apiPost<{ result: ResumeAnalysisResult }>('/api/developer/resume/analyze', targetJd ? { targetJd } : {});
+export const analyzeResume = (targetJd?: string, versionId?: string) =>
+  apiPost<{ result: ResumeAnalysisResult }>('/api/developer/resume/analyze', { targetJd, versionId });
+export async function uploadResume(file: File): Promise<ResumeVersionRow & { content: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  return handle<ResumeVersionRow & { content: string }>(
+    await fetch('/api/developer/resume/upload', { method: 'POST', credentials: 'include', body: form }),
+  );
+}
 
 // ── Planner ──────────────────────────────────────────────────────────────────
 export interface CalEvent {
