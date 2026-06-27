@@ -3,6 +3,27 @@
 Deviations from the master spec and notable architectural choices, with reasons.
 Append-only; newest at top.
 
+## Phase 4
+
+- **"Scheduling" is on-demand generation, not recurring background jobs.** Daily
+  plans, goal simulations, and exam-prep schedules are generated when the user
+  asks. This keeps to the launch-when-used model and conserves Neon compute (no
+  constant pg-boss polling). True recurring automation (cron) can be added later
+  with pg-boss / node-cron if a real need appears.
+
+- **Minimal hand-written `.ics` parser** (no dependency) — unfolds folded lines
+  and reads SUMMARY/DTSTART/DTEND/LOCATION/UID/VALUE=DATE. Covers personal
+  calendar exports; a full ical library can replace it if edge cases bite.
+  Imported events dedupe by UID.
+
+- **Lectures folded into timetable/calendar.** The spec lists a `lecture` table;
+  for now lectures are represented as recurring `timetable_slot`s or calendar
+  events rather than a separate table. Easy to split out later.
+
+- **Goal roadmap is seeded on first simulate** — if a goal has no steps, the
+  simulator's suggested steps become its roadmap; subsequent simulates only add a
+  probability snapshot (charted over time).
+
 ## Phase 3
 
 - **Knowledge map renders with `d3-force` + plain SVG**, not a heavy graph library

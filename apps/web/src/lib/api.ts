@@ -269,3 +269,105 @@ export interface GraphData {
 export const getGraph = () => apiGet<GraphData>('/api/knowledge/graph');
 export const buildGraph = () =>
   apiPost<{ sources: number; entities: number; relations: number }>('/api/knowledge/extract-all');
+
+// ── Planner ──────────────────────────────────────────────────────────────────
+export interface CalEvent {
+  id: string;
+  title: string;
+  location: string | null;
+  startAt: string;
+  endAt: string | null;
+  allDay: boolean;
+  source: string;
+}
+export interface PlanItem {
+  id: string;
+  title: string;
+  detail: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  kind: string;
+  done: boolean;
+}
+export interface GoalRow {
+  id: string;
+  title: string;
+  description: string | null;
+  targetDate: string | null;
+  status: string;
+}
+export interface GoalDetail extends GoalRow {
+  steps: { id: string; title: string; done: boolean }[];
+  snapshots: { probability: number; rationale: string | null; capturedAt: string }[];
+}
+export interface CourseRow {
+  id: string;
+  name: string;
+  code: string | null;
+  term: string | null;
+}
+export interface AssignmentRow {
+  id: string;
+  courseId: string;
+  courseName: string;
+  title: string;
+  dueAt: string | null;
+  status: string;
+}
+export interface ExamRow {
+  id: string;
+  courseName: string;
+  title: string;
+  examAt: string | null;
+  location: string | null;
+}
+export interface TimetableRow {
+  id: string;
+  courseName: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  location: string | null;
+}
+
+// calendar + daily plan
+export const getCalendar = () => apiGet<{ events: CalEvent[] }>('/api/planner/calendar');
+export const createEvent = (body: { title: string; startAt: string; endAt?: string; location?: string }) =>
+  apiPost<CalEvent>('/api/planner/calendar', body);
+export const importIcs = (ics: string) =>
+  apiPost<{ parsed: number; imported: number }>('/api/planner/calendar/import', { ics });
+export const getToday = (date?: string) =>
+  apiGet<{ date: string; items: PlanItem[] }>(`/api/planner/today${date ? `?date=${date}` : ''}`);
+export const generatePlan = (date?: string) =>
+  apiPost<{ date: string; items: PlanItem[] }>('/api/planner/today/generate', date ? { date } : {});
+export const addPlanTask = (date: string, title: string) =>
+  apiPost<PlanItem>('/api/planner/today/task', { date, title });
+export const togglePlanItem = (id: string, done: boolean) =>
+  apiPost<{ ok: true }>(`/api/planner/plan/${id}/toggle`, { done });
+
+// goals
+export const getGoals = () => apiGet<{ goals: GoalRow[] }>('/api/planner/goals');
+export const createGoal = (body: { title: string; description?: string; targetDate?: string }) =>
+  apiPost<GoalRow>('/api/planner/goals', body);
+export const getGoalDetail = (id: string) => apiGet<GoalDetail>(`/api/planner/goals/${id}`);
+export const deleteGoal = (id: string) => apiDelete<{ ok: true }>(`/api/planner/goals/${id}`);
+export const toggleStep = (id: string, done: boolean) =>
+  apiPost<{ ok: true }>(`/api/planner/goals/steps/${id}/toggle`, { done });
+export const simulateGoal = (id: string) =>
+  apiPost<{ probability: number; rationale: string }>(`/api/planner/goals/${id}/simulate`);
+
+// university
+export const getCourses = () => apiGet<{ courses: CourseRow[] }>('/api/planner/courses');
+export const createCourse = (body: { name: string; code?: string; term?: string }) =>
+  apiPost<CourseRow>('/api/planner/courses', body);
+export const getAssignments = () => apiGet<{ assignments: AssignmentRow[] }>('/api/planner/assignments');
+export const createAssignment = (body: { courseId: string; title: string; dueAt?: string }) =>
+  apiPost<AssignmentRow>('/api/planner/assignments', body);
+export const toggleAssignment = (id: string, status: 'todo' | 'done') =>
+  apiPost<{ ok: true }>(`/api/planner/assignments/${id}/toggle`, { status });
+export const getExams = () => apiGet<{ exams: ExamRow[] }>('/api/planner/exams');
+export const createExam = (body: { courseId: string; title: string; examAt?: string }) =>
+  apiPost<ExamRow>('/api/planner/exams', body);
+export const getTimetable = () => apiGet<{ slots: TimetableRow[] }>('/api/planner/timetable');
+export const generateExamPlan = () =>
+  apiPost<{ sessions: { when: string; course?: string; focus: string }[] }>('/api/planner/exam-plan/generate');

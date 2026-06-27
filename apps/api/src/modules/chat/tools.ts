@@ -3,6 +3,7 @@ import { hybridSearch } from '../search/service.js';
 import { listSources, getSourceDetail } from '../sources/repo.js';
 import { searchCode, recentActivity } from '../developer/repo.js';
 import { dueFlashcards, countDue, knowledgeGaps } from '../learning/repo.js';
+import { listEvents, getPlan, listGoals } from '../planner/repo.js';
 
 /**
  * The agent tool registry — the typed functions the AI Command Center can call.
@@ -108,6 +109,34 @@ export const AGENT_TOOLS: Record<string, AgentTool> = {
       dueCards: await dueFlashcards(15),
       gaps: await knowledgeGaps(),
     }),
+  },
+
+  get_calendar: {
+    def: {
+      name: 'get_calendar',
+      description: 'Calendar events in the next N days (default 7).',
+      parameters: { type: 'object', properties: { days: { type: 'number' } } },
+    },
+    execute: (args) =>
+      listEvents(new Date(), new Date(Date.now() + Number(args.days ?? 7) * 86_400_000)),
+  },
+
+  get_tasks: {
+    def: {
+      name: 'get_tasks',
+      description: "The daily plan items for a date (YYYY-MM-DD, default today).",
+      parameters: { type: 'object', properties: { date: { type: 'string' } } },
+    },
+    execute: (args) => getPlan(String(args.date ?? new Date().toISOString().slice(0, 10))),
+  },
+
+  get_goals: {
+    def: {
+      name: 'get_goals',
+      description: 'The user\'s active goals.',
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => listGoals(),
   },
 };
 

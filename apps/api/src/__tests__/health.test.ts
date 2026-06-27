@@ -19,9 +19,9 @@ describe('module stubs', () => {
   const app = createApp();
 
   it('mounts not-yet-built modules as scaffolded stubs', async () => {
-    const res = await request(app).get('/api/planner');
+    const res = await request(app).get('/api/life');
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ module: 'planner', status: 'scaffolded' });
+    expect(res.body).toMatchObject({ module: 'life', status: 'scaffolded' });
   });
 
   it('protects real modules with auth', async () => {
@@ -33,6 +33,9 @@ describe('module stubs', () => {
       '/api/learning/flashcards/due',
       '/api/learning/gaps',
       '/api/knowledge/graph',
+      '/api/planner/today',
+      '/api/planner/goals',
+      '/api/planner/courses',
     ]) {
       const res = await request(app).get(path);
       expect(res.status, `${path} should require auth`).toBe(401);

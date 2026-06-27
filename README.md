@@ -8,10 +8,11 @@ Single-user, self-hosted, and **$0 to run**: local AI via Ollama, vectors in
 Postgres via `pgvector`, files on local disk. The only cloud piece is Neon's free
 Postgres tier (swappable for local Postgres by changing one connection string).
 
-> **Status: Phase 3 complete.** On top of Phases 1–2, the **Learning** module is
-> live: per-source summaries, **flashcards with SM-2 spaced repetition**, quiz
-> generation/attempts, a **knowledge-map** graph view, and gap detection. Remaining
-> modules fill in over Phases 4–6 (see [the build plan](#build-phases)).
+> **Status: Phase 4 complete.** On top of Phases 1–3, the **Planner** module is
+> live: a daily planner (calendar import via `.ics` + AI-generated time-blocked
+> plans), a **Goal Simulator** (roadmap + success-probability over time), and a
+> **University Companion** (courses, assignments, exams, exam-prep schedules).
+> Remaining modules fill in over Phases 5–6 (see [the build plan](#build-phases)).
 
 ---
 
@@ -193,6 +194,21 @@ Ollama for generation) offers five tabs:
 
 New agent tools: `get_due_flashcards`, `create_study_plan`.
 
+## Phase 4 — what's new
+
+After `pnpm db:migrate` adds the Planner tables, the **Planner** module has three tabs:
+
+- **Today** — see your day's plan; **Generate plan** builds a time-blocked schedule
+  (needs Ollama) from your calendar, upcoming assignments, and goal steps. Quick-add
+  tasks; tick items off. Sidebar shows upcoming events and **imports `.ics`** (paste
+  an export from Google/Apple Calendar).
+- **Goals** — add a goal with a target date, **Simulate** to get a success
+  probability + an AI roadmap; re-simulate over time to chart your odds.
+- **University** — add courses, assignments (with due dates that feed the planner),
+  and exams; **Generate** an exam-prep study schedule.
+
+New agent tools: `get_calendar`, `get_tasks`, `get_goals`.
+
 ## Scripts
 
 | Command | What it does |
@@ -216,8 +232,8 @@ Built incrementally; each phase ships fully and runnable before the next starts.
 0. **Scaffold** — monorepo, provider interfaces, Express boot, web shell. ✅
 1. **Foundation** — auth, ingestion pipeline (note/PDF/URL), hybrid search, AI Command Center. ✅
 2. **Second Brain + Developer** — screenshots/OCR, web archive, auto-tagging, project memory, GitHub sync, Code Historian, Career Analyzer. ✅
-3. **Learning** — summaries, flashcards (SM-2), quizzes, knowledge-map, gap detection. ← *you are here*
-4. Planner (daily plan, goal simulator, university companion).
+3. **Learning** — summaries, flashcards (SM-2), quizzes, knowledge-map, gap detection. ✅
+4. **Planner** — daily plan (.ics import), goal simulator, university companion. ← *you are here*
 5. Life (metrics, expense detective, timeline, dataset export).
 6. Polish (interview voice, resume tailoring, dashboards, forecasts).
 
