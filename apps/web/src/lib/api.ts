@@ -269,6 +269,31 @@ export interface GraphData {
 export const getGraph = () => apiGet<GraphData>('/api/knowledge/graph');
 export const buildGraph = () =>
   apiPost<{ sources: number; entities: number; relations: number }>('/api/knowledge/extract-all');
+export const getEntitySources = (id: string) =>
+  apiGet<{ sources: { id: string; title: string; type: string }[] }>(
+    `/api/knowledge/entity/${id}/sources`,
+  );
+
+// ── Cross-module insights ────────────────────────────────────────────────────
+export interface Correlation {
+  a: string;
+  b: string;
+  r: number;
+  text: string;
+}
+export const getCorrelations = () => apiGet<{ insights: Correlation[] }>('/api/life/correlations');
+export interface WeeklyReviewData {
+  stats: {
+    commits: number;
+    sources: number;
+    reviews: number;
+    journal: number;
+    plansDone: number;
+    spend: number;
+  };
+  review: string;
+}
+export const getWeeklyReview = () => apiGet<WeeklyReviewData>('/api/life/weekly-review');
 
 // ── Planner ──────────────────────────────────────────────────────────────────
 export interface CalEvent {

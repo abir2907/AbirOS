@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   forceSimulation,
   forceLink,
@@ -8,9 +9,9 @@ import {
   forceCollide,
   type SimulationNodeDatum,
 } from 'd3-force';
-import { Loader2, Network } from 'lucide-react';
+import { Loader2, Network, FileText, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { buildGraph, getGraph, type GraphData } from '@/lib/api';
+import { buildGraph, getGraph, getEntitySources, type GraphData } from '@/lib/api';
 
 const W = 760;
 const H = 480;
@@ -62,6 +63,14 @@ export function KnowledgeMap() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['graph'] }),
   });
 
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState<{ id: string; name: string } | null>(null);
+  const sources = useQuery({
+    queryKey: ['entity-sources', selected?.id],
+    queryFn: () => getEntitySources(selected!.id),
+    enabled: !!selected,
+  });
+
   const positioned = useMemo(
     () => (data && data.nodes.length > 0 ? layout(data) : null),
     [data],
@@ -87,6 +96,7 @@ export function KnowledgeMap() {
           No map yet. Ingest some sources, then click <b>Build map</b> to extract entities.
         </div>
       ) : (
+        <>
         <div className="overflow-hidden rounded-xl border bg-card/30">
           <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full">
             {positioned.links.map((e, i) => {
@@ -108,7 +118,12 @@ export function KnowledgeMap() {
             {positioned.nodes.map((n) => {
               const r = 5 + (n.mentions / maxMentions) * 12;
               return (
-                <g key={n.id}>
+                <g
+                  key={n.id}
+                  className="cursor-pointer"
+                  onClick={() => setSelected({ id: n.id, name: n.name })}
+                >
+                  <circle cx={n.x} cy={n.y} r={r + 6} fill="transparent" />
                   <circle cx={n.x} cy={n.y} r={r} fill={colorFor(n.type)} fillOpacity={0.85} />
                   <text
                     x={n.x}
@@ -124,6 +139,37 @@ export function KnowledgeMap() {
             })}
           </svg>
         </div>
+
+        {selected && (
+          <div className="mt-3 rounded-lg border bg-card/50 p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-sm font-medium">{selected.name}</div>
+              <button onClick={() => setSelected(null)} className="text-muted-foreground" aria-label="Close">
+                <X className="size-4" />
+              </button>
+            </div>
+            {sources.isLoading ? (
+              <p className="text-xs text-muted-foreground">Loading…</p>
+            ) : (sources.data?.sources.length ?? 0) === 0 ? (
+              <p className="text-xs text-muted-foreground">No sources mention this yet.</p>
+            ) : (
+              <div className="space-y-1">
+                {sources.data!.sources.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => navigate(`/knowledge/source/${s.id}`)}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent"
+                  >
+                    <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 truncate">{s.title}</span>
+                    <span className="text-xs text-muted-foreground">{s.type}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        </>
       )}
     </div>
   );

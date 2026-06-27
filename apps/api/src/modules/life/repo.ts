@@ -152,6 +152,49 @@ export async function timeline(from: Date, to: Date, q = ''): Promise<TimelineRo
   return rows;
 }
 
+/** Daily average per metric over the last 120 days → Map<name, Map<date, value>>. */
+export async function dailyMetricSeries(): Promise<Map<string, Map<string, number>>> {
+  const { rows } = await getPool().query<{ name: string; d: string; v: number }>(
+    `SELECT m.name, to_char(date(p.recorded_at), 'YYYY-MM-DD') AS d, avg(p.value)::float AS v
+       FROM metric_point p JOIN metric m ON m.id = p.metric_id
+      WHERE p.recorded_at >= now() - interval '120 days'
+      GROUP BY m.name, d`,
+  );
+  const map = new Map<string, Map<string, number>>();
+  for (const r of rows) {
+    const inner = map.get(r.name) ?? new Map<string, number>();
+    inner.set(r.d, r.v);
+    map.set(r.name, inner);
+  }
+  return map;
+}
+
+/** Headline activity counts for the past 7 days (for the weekly review). */
+export async function weeklyAggregates() {
+  const pool = getPool();
+  const count = async (sql: string) => (await pool.query<{ n: number }>(sql)).rows[0]?.n ?? 0;
+  const [commits, sources, reviews, journal, plansDone] = await Promise.all([
+    count(`SELECT count(*)::int n FROM git_commit WHERE authored_at >= now() - interval '7 days'`),
+    count(
+      `SELECT count(*)::int n FROM source WHERE ingested_at >= now() - interval '7 days' AND deleted_at IS NULL`,
+    ),
+    count(`SELECT count(*)::int n FROM review_log WHERE reviewed_at >= now() - interval '7 days'`),
+    count(
+      `SELECT count(*)::int n FROM journal_entry WHERE entry_on >= (now() - interval '7 days')::date AND deleted_at IS NULL`,
+    ),
+    count(
+      `SELECT count(*)::int n FROM plan_item WHERE done = true AND updated_at >= now() - interval '7 days'`,
+    ),
+  ]);
+  const spend =
+    (
+      await pool.query<{ total: number }>(
+        `SELECT coalesce(sum(amount), 0)::float total FROM expense WHERE spent_on >= (now() - interval '7 days')::date`,
+      )
+    ).rows[0]?.total ?? 0;
+  return { commits, sources, reviews, journal, plansDone, spend: Number(spend.toFixed(2)) };
+}
+
 // ── Personal dataset (daily aggregates) ──────────────────────────────────────
 export interface DatasetRow {
   date: string;

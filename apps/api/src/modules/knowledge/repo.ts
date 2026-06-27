@@ -68,6 +68,19 @@ export interface GraphEdge {
   weight: number;
 }
 
+/** Sources that mention a given entity — for clicking a node in the knowledge map. */
+export async function getEntitySources(entityId: string) {
+  const { rows } = await getPool().query<{ id: string; title: string; type: string }>(
+    `SELECT DISTINCT s.id, s.title, s.type::text AS type
+       FROM entity_mention em
+       JOIN source s ON s.id = em.source_id
+      WHERE em.entity_id = $1 AND s.deleted_at IS NULL
+      LIMIT 50`,
+    [entityId],
+  );
+  return rows;
+}
+
 export async function getGraph(): Promise<{ nodes: GraphNode[]; edges: GraphEdge[] }> {
   const pool = getPool();
   const nodes = await pool.query<{ id: string; name: string; type: string; mentions: number }>(

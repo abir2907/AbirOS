@@ -106,6 +106,23 @@ lifeRouter.get('/timeline', async (req, res, next) => {
   }
 });
 
+// ── Cross-module insights ─────────────────────────────────────────────────────
+lifeRouter.get('/correlations', async (_req, res, next) => {
+  try {
+    res.json(await svc.correlations());
+  } catch (err) {
+    next(err);
+  }
+});
+
+lifeRouter.get('/weekly-review', async (_req, res, next) => {
+  try {
+    res.json(await svc.weeklyReview());
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Personal Dataset Generator ───────────────────────────────────────────────
 lifeRouter.get('/dataset', async (req, res, next) => {
   try {

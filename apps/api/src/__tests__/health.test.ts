@@ -37,6 +37,9 @@ describe('module mounting', () => {
       '/api/life/timeline',
       '/api/dashboard/summary',
       '/api/settings',
+      '/api/memory',
+      '/api/life/correlations',
+      '/api/life/weekly-review',
     ]) {
       const res = await request(app).get(path);
       expect(res.status, `${path} should require auth`).toBe(401);

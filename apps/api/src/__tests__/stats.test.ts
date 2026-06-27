@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   mean,
   stddev,
+  pearson,
   linearRegression,
   forecast,
   movingAverage,
@@ -35,6 +36,12 @@ describe('life stats', () => {
   it('detectAnomalies flags an outlier', () => {
     const idx = detectAnomalies([10, 10, 10, 10, 100], 1.5);
     expect(idx).toContain(4);
+  });
+
+  it('pearson detects positive, negative, and no correlation', () => {
+    expect(pearson([1, 2, 3, 4], [2, 4, 6, 8])).toBeCloseTo(1, 5);
+    expect(pearson([1, 2, 3, 4], [8, 6, 4, 2])).toBeCloseTo(-1, 5);
+    expect(pearson([1, 2, 3, 4], [5, 5, 5, 5])).toBe(0); // no variance
   });
 
   it('detectRecurring finds a monthly subscription', () => {

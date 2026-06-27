@@ -14,6 +14,26 @@ export function stddev(xs: number[]): number {
   return Math.sqrt(mean(xs.map((x) => (x - m) ** 2)));
 }
 
+/** Pearson correlation coefficient between two equal-length series (−1..1). */
+export function pearson(xs: number[], ys: number[]): number {
+  const n = Math.min(xs.length, ys.length);
+  if (n < 2) return 0;
+  const mx = mean(xs.slice(0, n));
+  const my = mean(ys.slice(0, n));
+  let num = 0;
+  let dx = 0;
+  let dy = 0;
+  for (let i = 0; i < n; i++) {
+    const a = xs[i]! - mx;
+    const b = ys[i]! - my;
+    num += a * b;
+    dx += a * a;
+    dy += b * b;
+  }
+  const den = Math.sqrt(dx * dy);
+  return den === 0 ? 0 : num / den;
+}
+
 /** Least-squares line y = slope*x + intercept. */
 export function linearRegression(ys: number[]): { slope: number; intercept: number } {
   const n = ys.length;

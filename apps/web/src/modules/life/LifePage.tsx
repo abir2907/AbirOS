@@ -1,16 +1,18 @@
 import { useState } from 'react';
-import { Activity, Receipt, History, Database } from 'lucide-react';
+import { Activity, Receipt, History, Database, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnalyticsTab } from './AnalyticsTab';
 import { ExpensesTab } from './ExpensesTab';
 import { TimelineTab } from './TimelineTab';
 import { DatasetTab } from './DatasetTab';
+import { InsightsTab } from './InsightsTab';
 
-type TabId = 'analytics' | 'expenses' | 'timeline' | 'dataset';
+type TabId = 'analytics' | 'expenses' | 'insights' | 'timeline' | 'dataset';
 
 const TABS: { id: TabId; label: string; icon: typeof Activity }[] = [
   { id: 'analytics', label: 'Analytics', icon: Activity },
   { id: 'expenses', label: 'Expenses', icon: Receipt },
+  { id: 'insights', label: 'Insights', icon: Lightbulb },
   { id: 'timeline', label: 'Life Replay', icon: History },
   { id: 'dataset', label: 'Dataset', icon: Database },
 ];
@@ -47,6 +49,7 @@ export function LifePage() {
 
       {tab === 'analytics' && <AnalyticsTab />}
       {tab === 'expenses' && <ExpensesTab />}
+      {tab === 'insights' && <InsightsTab />}
       {tab === 'timeline' && <TimelineTab />}
       {tab === 'dataset' && <DatasetTab />}
     </div>

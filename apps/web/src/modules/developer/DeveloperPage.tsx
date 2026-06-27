@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
   BarChart,
   Bar,
@@ -8,6 +9,10 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  Radar,
 } from 'recharts';
 import {
   Github,
@@ -187,6 +192,23 @@ function DevOverview() {
                   </ResponsiveContainer>
                 </ChartCard>
               )}
+
+              {insights.languages.length >= 3 && (
+                <ChartCard title="Skill radar (by language share)">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <RadarChart data={skillData(insights.languages)}>
+                      <PolarGrid stroke="hsl(240 5% 20%)" />
+                      <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11, fill: 'hsl(240 5% 60%)' }} />
+                      <Radar dataKey="level" stroke={ACCENT} fill={ACCENT} fillOpacity={0.4} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                  <div className="mt-2 text-center">
+                    <Link to="/learning" className="text-xs text-primary">
+                      See your knowledge gaps in Learning →
+                    </Link>
+                  </div>
+                </ChartCard>
+              )}
             </>
           )}
 
@@ -228,6 +250,12 @@ function DevOverview() {
       )}
     </div>
   );
+}
+
+function skillData(languages: { name: string; share: number }[]) {
+  const top = languages.slice(0, 6);
+  const max = Math.max(...top.map((l) => l.share), 1e-9);
+  return top.map((l) => ({ skill: l.name, level: Math.round((l.share / max) * 100) }));
 }
 
 const tooltipStyle = {

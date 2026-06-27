@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
-import { detectRecurring, detectAnomalies, forecast, mean, movingAverage } from './stats.js';
+import { detectRecurring, detectAnomalies, forecast, mean, movingAverage, pearson } from './stats.js';
+import { getLlm } from '../../lib/ai.js';
 import * as repo from './repo.js';
 
 // ── Expense Detective ────────────────────────────────────────────────────────
@@ -99,4 +100,68 @@ export async function datasetJson() {
 export async function datasetCsv(): Promise<string> {
   const rows = await repo.dailyDataset();
   return Papa.unparse(rows);
+}
+
+// ── Cross-module correlations ─────────────────────────────────────────────────
+const PRETTY: Record<string, string> = {
+  commits: 'commits',
+  spend: 'spending',
+  sources_added: 'sources added',
+  cards_reviewed: 'cards reviewed',
+  journal_entries: 'journal entries',
+};
+const DATASET_COLS = ['commits', 'spend', 'sources_added', 'cards_reviewed', 'journal_entries'] as const;
+
+/** Pairwise correlations across daily activity + metrics, phrased in plain language. */
+export async function correlations() {
+  const [dataset, metrics] = await Promise.all([repo.dailyDataset(), repo.dailyMetricSeries()]);
+  const byDate = new Map(dataset.map((d) => [d.date, d]));
+
+  const variables: { label: string; dates: string[]; get: (d: string) => number | undefined }[] = [];
+  for (const [name, m] of metrics) variables.push({ label: name, dates: [...m.keys()], get: (d) => m.get(d) });
+  for (const col of DATASET_COLS)
+    variables.push({
+      label: PRETTY[col]!,
+      dates: dataset.map((x) => x.date),
+      get: (d) => {
+        const row = byDate.get(d);
+        return row ? row[col] : undefined;
+      },
+    });
+
+  const insights: { a: string; b: string; r: number; text: string }[] = [];
+  for (let i = 0; i < variables.length; i++) {
+    for (let j = i + 1; j < variables.length; j++) {
+      const A = variables[i]!;
+      const B = variables[j]!;
+      const days = A.dates.filter((d) => A.get(d) != null && B.get(d) != null);
+      if (days.length < 7) continue;
+      const r = pearson(days.map((d) => A.get(d)!), days.map((d) => B.get(d)!));
+      if (Math.abs(r) < 0.4) continue;
+      const dir = r > 0 ? 'more' : 'less';
+      insights.push({
+        a: A.label,
+        b: B.label,
+        r: Number(r.toFixed(2)),
+        text: `On days with higher ${A.label}, you tend to have ${dir} ${B.label}.`,
+      });
+    }
+  }
+  insights.sort((a, b) => Math.abs(b.r) - Math.abs(a.r));
+  return { insights: insights.slice(0, 8) };
+}
+
+// ── Weekly review ─────────────────────────────────────────────────────────────
+export async function weeklyReview() {
+  const a = await repo.weeklyAggregates();
+  const res = await getLlm().chat({
+    system: 'You write short, encouraging weekly reviews. Output markdown only, no preamble.',
+    messages: [
+      {
+        role: 'user',
+        content: `Write a brief weekly review of my past 7 days from these numbers: ${a.commits} commits, ${a.sources} things saved to my knowledge base, ${a.reviews} flashcards reviewed, ${a.journal} journal entries, ${a.plansDone} planned tasks completed, ${a.spend} spent. Call out wins and give one concrete suggestion for next week.`,
+      },
+    ],
+  });
+  return { stats: a, review: res.content };
 }
