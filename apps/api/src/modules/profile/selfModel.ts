@@ -1,4 +1,5 @@
 import { listGoals } from '../planner/repo.js';
+import { musicSummaryData, listBooks } from '../collections/repo.js';
 import * as repo from './repo.js';
 
 export interface SelfModelInput {
@@ -9,6 +10,8 @@ export interface SelfModelInput {
   interests: { label: string; sentiment: string }[];
   accomplishments: { title: string }[];
   goals: { title: string; horizon: string }[];
+  music?: string[];
+  reading?: string[];
 }
 
 /**
@@ -37,6 +40,8 @@ export function composeSelfModel(input: SelfModelInput, budgetChars = 3200): str
     body.push(
       `**Active goals:** ${input.goals.map((g) => `${g.title} (${g.horizon.replace('_', ' ')})`).join('; ')}`,
     );
+  if (input.music?.length) body.push(`**Music:** ${input.music.slice(0, 10).join(', ')}`);
+  if (input.reading?.length) body.push(`**Currently reading:** ${input.reading.join(', ')}`);
 
   if (body.length === 0) return '';
   const out = ['# About the user', ...body].join('\n');
@@ -45,11 +50,13 @@ export function composeSelfModel(input: SelfModelInput, budgetChars = 3200): str
 
 /** Fetch everything and compose the self-model block. */
 export async function buildSelfModel(): Promise<string> {
-  const [p, interests, accomplishments, goals] = await Promise.all([
+  const [p, interests, accomplishments, goals, music, reading] = await Promise.all([
     repo.getProfile(),
     repo.listInterests(),
     repo.listAccomplishments(50),
     listGoals(),
+    musicSummaryData().catch(() => ({ topArtists: [] as { name: string }[], trackCount: 0 })),
+    listBooks('reading').catch(() => [] as { title: string }[]),
   ]);
   return composeSelfModel({
     bio: p?.bio,
@@ -59,6 +66,8 @@ export async function buildSelfModel(): Promise<string> {
     interests: interests.map((i) => ({ label: i.label, sentiment: i.sentiment })),
     accomplishments: accomplishments.map((a) => ({ title: a.title })),
     goals: goals.filter((g) => g.status === 'active').map((g) => ({ title: g.title, horizon: g.horizon })),
+    music: music.topArtists.slice(0, 8).map((a) => a.name),
+    reading: reading.map((b) => b.title),
   });
 }
 

@@ -9,6 +9,7 @@ import {
   Search,
   Settings,
   User,
+  Library,
   type LucideIcon,
 } from 'lucide-react';
 import { MODULES, type ModuleDef } from '@abiros/shared';
@@ -46,6 +47,11 @@ const UI: Record<string, ModuleUi> = {
     icon: User,
     hint: 'Your self-model — what the assistant knows about you.',
     comingSoon: ['Profile', 'Interests', 'Accomplishments'],
+  },
+  collections: {
+    icon: Library,
+    hint: 'Your music, books, sports, and travel.',
+    comingSoon: ['Music', 'Books', 'Sports', 'Travel'],
   },
   learning: {
     icon: GraduationCap,

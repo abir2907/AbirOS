@@ -46,6 +46,10 @@ const USAGE_TABLES = [
   'interest',
   'accomplishment',
   'study_item',
+  'music_track',
+  'book',
+  'place',
+  'trip',
 ];
 
 /** Approximate DB usage (row counts) so the user can watch the Neon free tier. */
@@ -86,6 +90,12 @@ const PURGE_TABLES = [
   'accomplishment',
   'study_item',
   'user_memory',
+  'music_artist',
+  'music_track',
+  'book',
+  'sport_interest',
+  'place',
+  'trip',
 ];
 
 export async function purgeAll() {

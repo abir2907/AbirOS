@@ -363,6 +363,59 @@ export const deleteStudyItem = (id: string) => apiDelete<{ ok: true }>(`/api/lea
 export const suggestNextStudy = () =>
   apiGet<{ suggestion: string; dueCount: number; backlog: number }>('/api/learning/study/suggest-next');
 
+// ── Collections (Stage B) ─────────────────────────────────────────────────────
+export const importMusicTakeout = (takeout: string) =>
+  apiPost<{ parsed: number; imported: number }>('/api/collections/music/import', { takeout });
+export const getMusicTaste = () =>
+  apiGet<{ summary: string; topArtists: { name: string; n: number }[]; trackCount: number }>(
+    '/api/collections/music/taste',
+  );
+
+export interface BookRow {
+  id: string;
+  title: string;
+  author: string | null;
+  status: string;
+  rating: number | null;
+  finishedOn: string | null;
+}
+export const getBooks = (status?: string) =>
+  apiGet<{ books: BookRow[] }>(`/api/collections/books${status ? `?status=${status}` : ''}`);
+export const addBook = (body: { title: string; author?: string; status?: string }) =>
+  apiPost<BookRow>('/api/collections/books', body);
+export const updateBook = (id: string, body: Partial<{ status: string; rating: number; finishedOn: string }>) =>
+  apiPost<BookRow>(`/api/collections/books/${id}`, body);
+export const deleteBook = (id: string) => apiDelete<{ ok: true }>(`/api/collections/books/${id}`);
+export const recommendBook = () => apiPost<{ recommendation: string }>('/api/collections/books/recommend');
+
+export interface SportRow {
+  id: string;
+  kind: string;
+  label: string;
+}
+export const getSports = () => apiGet<{ sports: SportRow[] }>('/api/collections/sports');
+export const addSport = (body: { kind?: string; label: string }) =>
+  apiPost<SportRow>('/api/collections/sports', body);
+export const deleteSport = (id: string) => apiDelete<{ ok: true }>(`/api/collections/sports/${id}`);
+
+export interface PlaceRow {
+  id: string;
+  name: string;
+  country: string | null;
+  lat: number | null;
+  lng: number | null;
+  status: string;
+}
+export const getPlaces = (status?: string) =>
+  apiGet<{ places: PlaceRow[] }>(`/api/collections/places${status ? `?status=${status}` : ''}`);
+export const addPlace = (body: { name: string; country?: string; lat?: number; lng?: number; status?: string }) =>
+  apiPost<PlaceRow>('/api/collections/places', body);
+export const updatePlace = (id: string, body: { status?: string }) =>
+  apiPost<PlaceRow>(`/api/collections/places/${id}`, body);
+export const deletePlace = (id: string) => apiDelete<{ ok: true }>(`/api/collections/places/${id}`);
+export const planTrip = (query?: string) =>
+  apiPost<{ itinerary: string; places: string[] }>('/api/collections/trips/plan', query ? { query } : {});
+
 // ── Planner ──────────────────────────────────────────────────────────────────
 export interface CalEvent {
   id: string;

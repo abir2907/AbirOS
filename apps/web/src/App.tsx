@@ -14,6 +14,7 @@ import { PlannerPage } from '@/modules/planner/PlannerPage';
 import { LifePage } from '@/modules/life/LifePage';
 import { SettingsPage } from '@/modules/settings/SettingsPage';
 import { MePage } from '@/modules/profile/MePage';
+import { CollectionsPage } from '@/modules/collections/CollectionsPage';
 import { REGISTERED_MODULES } from '@/modules/registry';
 import { Button } from '@/components/ui/button';
 
@@ -23,6 +24,7 @@ const LIVE = new Set([
   'search',
   'knowledge',
   'profile',
+  'collections',
   'developer',
   'learning',
   'planner',
@@ -42,6 +44,7 @@ export default function App() {
           <Route path="knowledge" element={<KnowledgePage />} />
           <Route path="knowledge/source/:id" element={<SourceViewerPage />} />
           <Route path="me" element={<MePage />} />
+          <Route path="collections" element={<CollectionsPage />} />
           <Route path="developer" element={<DeveloperPage />} />
           <Route path="learning" element={<LearningPage />} />
           <Route path="planner" element={<PlannerPage />} />

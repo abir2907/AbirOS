@@ -264,6 +264,24 @@ Run `pnpm db:migrate` to apply the new tables, then:
 New agent tools: `get_profile`, `get_interests`, `get_accomplishments`,
 `get_study_backlog`, `suggest_next_study` (and `get_goals` now filters by horizon).
 
+## Extension — Stage B: Interests & collections
+
+Run `pnpm db:migrate`, then a new **Collections** module (sidebar) has four tabs:
+
+- **Music** — **import your YouTube history from Google Takeout** (offline, free):
+  *takeout.google.com → YouTube and YouTube Music → `history/watch-history.json`* →
+  upload that file. AbirOS extracts music (it reads "Artist - Topic" channels and
+  official videos), then writes an LLM **taste summary** that feeds your self-model.
+- **Books** — a shelf (want-to-read / reading / read) with a **Recommend** button
+  (uses your interests + goals). Finished books appear in **Life Replay**.
+- **Sports** — the sports, teams, and athletes you follow.
+- **Travel** — a wishlist on a free **OpenStreetMap** map (add lat/lng to pin a
+  place) and a **Plan a trip** itinerary drafter. Trips appear in Life Replay.
+
+New agent tools: `get_music_taste`, `get_books`, `recommend_book`,
+`get_sports_interests`, `get_places`, `plan_trip`. Try: *"plan a weekend from my
+travel wishlist"* or *"recommend me a book"*.
+
 ## Scripts
 
 | Command | What it does |

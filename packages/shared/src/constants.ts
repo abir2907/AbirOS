@@ -62,6 +62,14 @@ export type GoalHorizon = (typeof GOAL_HORIZONS)[number];
 export const STUDY_STATUSES = ['want_to_study', 'studying', 'studied'] as const;
 export type StudyStatus = (typeof STUDY_STATUSES)[number];
 
+/** Collections taxonomy (Stage B). */
+export const BOOK_STATUSES = ['want_to_read', 'reading', 'read'] as const;
+export type BookStatus = (typeof BOOK_STATUSES)[number];
+export const PLACE_STATUSES = ['want_to_visit', 'visited'] as const;
+export type PlaceStatus = (typeof PLACE_STATUSES)[number];
+export const SPORT_KINDS = ['sport', 'team', 'athlete'] as const;
+export type SportKind = (typeof SPORT_KINDS)[number];
+
 /**
  * Feature modules. `id` is used for API mount paths, web routes, nav, and the
  * `setting.enabled_modules` flags. `phase` documents when it gets real
@@ -110,6 +118,13 @@ export const MODULES: readonly ModuleDef[] = [
     label: 'Me',
     description: 'Your self-model: profile, interests, accomplishments, and goals the AI knows you by.',
     path: '/me',
+    phase: 0,
+  },
+  {
+    id: 'collections',
+    label: 'Collections',
+    description: 'Your music, books, sports, and travel — taste and collections.',
+    path: '/collections',
     phase: 0,
   },
   {

@@ -9,7 +9,9 @@ import { expenseInsights } from '../life/service.js';
 import { addMemory } from '../memory/repo.js';
 import { getProfile, listInterests, listAccomplishments } from '../profile/repo.js';
 import { listStudyItems, suggestNextStudy } from '../learning/study.js';
-import type { InterestCategory, StudyStatus } from '@abiros/shared';
+import { listBooks, listSports, listPlaces } from '../collections/repo.js';
+import { musicTaste, recommendBook, planTrip } from '../collections/service.js';
+import type { InterestCategory, StudyStatus, BookStatus, PlaceStatus } from '@abiros/shared';
 
 /**
  * The agent tool registry — the typed functions the AI Command Center can call.
@@ -196,6 +198,60 @@ export const AGENT_TOOLS: Record<string, AgentTool> = {
       parameters: { type: 'object', properties: {} },
     },
     execute: () => suggestNextStudy(),
+  },
+
+  get_music_taste: {
+    def: {
+      name: 'get_music_taste',
+      description: "The user's music taste — top artists and a summary from imported listening.",
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => musicTaste(),
+  },
+
+  get_books: {
+    def: {
+      name: 'get_books',
+      description: "The user's books; optionally filter by status (want_to_read | reading | read).",
+      parameters: { type: 'object', properties: { status: { type: 'string' } } },
+    },
+    execute: (args) => listBooks(args.status ? (String(args.status) as BookStatus) : undefined),
+  },
+
+  recommend_book: {
+    def: {
+      name: 'recommend_book',
+      description: "Recommend a book based on the user's interests, goals, and current shelf.",
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => recommendBook(),
+  },
+
+  get_sports_interests: {
+    def: {
+      name: 'get_sports_interests',
+      description: "Sports, teams, and athletes the user follows.",
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => listSports(),
+  },
+
+  get_places: {
+    def: {
+      name: 'get_places',
+      description: "Places the user wants to visit or has visited (filter by status).",
+      parameters: { type: 'object', properties: { status: { type: 'string' } } },
+    },
+    execute: (args) => listPlaces(args.status ? (String(args.status) as PlaceStatus) : undefined),
+  },
+
+  plan_trip: {
+    def: {
+      name: 'plan_trip',
+      description: "Draft a trip itinerary from the user's travel wishlist (optionally for a place/region).",
+      parameters: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    execute: (args) => planTrip(args.query ? String(args.query) : ''),
   },
 
   get_expenses: {

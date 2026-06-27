@@ -42,6 +42,8 @@ describe('module mounting', () => {
       '/api/life/weekly-review',
       '/api/profile',
       '/api/learning/study',
+      '/api/collections/books',
+      '/api/collections/places',
     ]) {
       const res = await request(app).get(path);
       expect(res.status, `${path} should require auth`).toBe(401);

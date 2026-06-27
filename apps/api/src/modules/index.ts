@@ -8,6 +8,7 @@ import { tagsRouter } from './tags/routes.js';
 import { projectsRouter } from './projects/routes.js';
 import { memoryRouter } from './memory/routes.js';
 import { profileRouter } from './profile/routes.js';
+import { collectionsRouter } from './collections/routes.js';
 import { knowledgeRouter } from './knowledge/routes.js';
 import { learningRouter } from './learning/routes.js';
 import { plannerRouter } from './planner/routes.js';
@@ -32,6 +33,7 @@ export function mountModules(): Router {
   router.use('/chat', chatRouter);
   router.use('/memory', memoryRouter);
   router.use('/profile', profileRouter);
+  router.use('/collections', collectionsRouter);
   router.use('/knowledge', knowledgeRouter);
   router.use('/learning', learningRouter);
   router.use('/planner', plannerRouter);

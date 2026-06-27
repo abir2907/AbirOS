@@ -16,3 +16,4 @@ export * from './life.js';
 export * from './career.js';
 export * from './memory.js';
 export * from './me.js';
+export * from './collections.js';

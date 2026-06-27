@@ -142,6 +142,15 @@ export async function timeline(from: Date, to: Date, q = ''): Promise<TimelineRo
         UNION ALL
         SELECT c.start_at, 'event', c.title, c.location
           FROM calendar_event c
+        UNION ALL
+        SELECT ac.happened_on::timestamptz, 'accomplishment', ac.title, ac.description
+          FROM accomplishment ac WHERE ac.happened_on IS NOT NULL
+        UNION ALL
+        SELECT tr.start_date::timestamptz, 'trip', tr.title, tr.summary
+          FROM trip tr WHERE tr.start_date IS NOT NULL
+        UNION ALL
+        SELECT bk.finished_on::timestamptz, 'book', bk.title, bk.author
+          FROM book bk WHERE bk.finished_on IS NOT NULL
      ) t
      WHERE at BETWEEN $1 AND $2
        AND ($3 = '' OR title ILIKE '%' || $3 || '%' OR coalesce(detail, '') ILIKE '%' || $3 || '%')
