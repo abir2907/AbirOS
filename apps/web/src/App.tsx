@@ -7,6 +7,7 @@ import { DashboardPage } from '@/modules/dashboard/DashboardPage';
 import { CommandCenterPage } from '@/modules/chat/CommandCenterPage';
 import { SearchPage } from '@/modules/search/SearchPage';
 import { KnowledgePage } from '@/modules/knowledge/KnowledgePage';
+import { SourceViewerPage } from '@/modules/knowledge/SourceViewerPage';
 import { DeveloperPage } from '@/modules/developer/DeveloperPage';
 import { LearningPage } from '@/modules/learning/LearningPage';
 import { PlannerPage } from '@/modules/planner/PlannerPage';
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="chat" element={<CommandCenterPage />} />
           <Route path="search" element={<SearchPage />} />
           <Route path="knowledge" element={<KnowledgePage />} />
+          <Route path="knowledge/source/:id" element={<SourceViewerPage />} />
           <Route path="developer" element={<DeveloperPage />} />
           <Route path="learning" element={<LearningPage />} />
           <Route path="planner" element={<PlannerPage />} />

@@ -6,6 +6,7 @@ import { HttpError } from '../../lib/errors.js';
 import { createSessionSchema, postMessageSchema } from './schemas.js';
 import * as repo from './repo.js';
 import { streamAnswer } from './service.js';
+import { WORKFLOW_LIST } from './workflows.js';
 
 export const chatRouter: RouterType = Router();
 chatRouter.use(requireAuth);
@@ -19,6 +20,10 @@ chatRouter.post('/sessions', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+chatRouter.get('/workflows', (_req, res) => {
+  res.json({ workflows: WORKFLOW_LIST });
 });
 
 chatRouter.get('/sessions', async (_req, res, next) => {

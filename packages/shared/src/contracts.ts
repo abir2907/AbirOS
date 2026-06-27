@@ -24,10 +24,11 @@ export interface SearchHit {
   score: number;
 }
 
-/** A numbered citation the chat answer refers to as [n]. */
+/** A numbered citation the chat answer refers to as [n]. Deep-links to a chunk. */
 export interface Citation {
   n: number;
   sourceId: string;
+  chunkId: string;
   title: string;
   type: (typeof SOURCE_TYPES)[number];
 }
@@ -42,6 +43,7 @@ export type SearchRequest = z.infer<typeof searchRequestSchema>;
 /** Server-sent events streamed by the chat endpoint. */
 export type ChatStreamEvent =
   | { type: 'status'; message: string }
+  | { type: 'tool'; name: string; summary: string }
   | { type: 'citations'; citations: Citation[] }
   | { type: 'token'; value: string }
   | { type: 'done'; messageId: string }

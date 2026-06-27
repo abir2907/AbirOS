@@ -1,6 +1,19 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Github, Database, Download, AlertTriangle, Check, X, Loader2, Bell } from 'lucide-react';
+import {
+  Bot,
+  Github,
+  Database,
+  Download,
+  AlertTriangle,
+  Check,
+  X,
+  Loader2,
+  Bell,
+  Brain,
+  Trash2,
+  Plus,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +24,9 @@ import {
   setEnabledModules,
   purgeData,
   DATASET_CSV_URL,
+  getMemories,
+  addMemory,
+  deleteMemory,
 } from '@/lib/api';
 import { notifyPermission, notifySupported, requestNotifyPermission } from '@/lib/notify';
 
@@ -112,6 +128,8 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
+      <MemoryCard />
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm"><Download className="size-4" /> Data export</CardTitle>
@@ -125,6 +143,67 @@ export function SettingsPage() {
 
       <DangerZone />
     </div>
+  );
+}
+
+function MemoryCard() {
+  const qc = useQueryClient();
+  const memories = useQuery({ queryKey: ['memories'], queryFn: getMemories });
+  const [text, setText] = useState('');
+  const add = useMutation({
+    mutationFn: () => addMemory(text.trim()),
+    onSuccess: () => {
+      setText('');
+      qc.invalidateQueries({ queryKey: ['memories'] });
+    },
+  });
+  const del = useMutation({
+    mutationFn: deleteMemory,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['memories'] }),
+  });
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Brain className="size-4" /> Assistant memory
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <p className="text-xs text-muted-foreground">
+          Facts the Command Center remembers about you across chats. The AI can add these itself, or
+          add your own.
+        </p>
+        {(memories.data?.memories ?? []).map((mm) => (
+          <div key={mm.id} className="flex items-center gap-2 rounded-lg border bg-card/50 px-3 py-2 text-sm">
+            <span className="flex-1">{mm.content}</span>
+            {mm.source === 'assistant' && (
+              <Badge variant="outline" className="text-[10px]">
+                auto
+              </Badge>
+            )}
+            <Button size="icon" variant="ghost" className="size-7" onClick={() => del.mutate(mm.id)}>
+              <Trash2 className="size-4 text-muted-foreground" />
+            </Button>
+          </div>
+        ))}
+        {memories.data?.memories.length === 0 && (
+          <p className="text-sm text-muted-foreground">No memories yet.</p>
+        )}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (text.trim()) add.mutate();
+          }}
+          className="flex gap-2"
+        >
+          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Remember that I…" />
+          <Button type="submit" size="icon" variant="secondary" disabled={!text.trim()}>
+            <Plus className="size-4" />
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 

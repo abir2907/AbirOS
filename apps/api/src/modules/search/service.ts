@@ -1,4 +1,4 @@
-import { reciprocalRankFusion } from '@abiros/ai';
+import { reciprocalRankFusion, rerank } from '@abiros/ai';
 import type { SearchHit } from '@abiros/shared';
 import { logger } from '../../lib/logger.js';
 import { getEmbedder } from '../../lib/ai.js';
@@ -26,13 +26,26 @@ export async function hybridSearch(query: string, k = 8): Promise<SearchHit[]> {
     return [] as string[];
   });
 
-  const fused = reciprocalRankFusion([vectorIds, ftsIds]).slice(0, k);
+  // Over-fetch, then rerank (keyword overlap + recency) and take the top k.
+  const fused = reciprocalRankFusion([vectorIds, ftsIds]).slice(0, Math.max(k * 2, k));
   const details = await hydrateChunks(fused.map((f) => f.id));
 
-  const hits: SearchHit[] = [];
-  for (const f of fused) {
+  const now = Date.now();
+  const candidates = fused.flatMap((f) => {
     const d = details.get(f.id);
-    if (d) hits.push({ ...d, score: f.score });
-  }
-  return hits;
+    if (!d) return [];
+    const ageDays = d.ingestedAt ? (now - d.ingestedAt.getTime()) / 86_400_000 : undefined;
+    return [{ ...d, rrf: f.score, ageDays }];
+  });
+
+  return rerank(query, candidates)
+    .slice(0, k)
+    .map((r) => ({
+      chunkId: r.chunkId,
+      sourceId: r.sourceId,
+      sourceTitle: r.sourceTitle,
+      sourceType: r.sourceType,
+      text: r.text,
+      score: r.score,
+    }));
 }

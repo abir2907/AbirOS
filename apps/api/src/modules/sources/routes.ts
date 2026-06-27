@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { paginationQuerySchema } from '@abiros/shared';
 import { requireAuth } from '../../middleware/auth.js';
 import { HttpError } from '../../lib/errors.js';
-import { listSources, getSourceDetail, softDeleteSource } from './repo.js';
+import { listSources, getSourceDetail, getSourceChunks, softDeleteSource } from './repo.js';
 
 export const sourcesRouter: RouterType = Router();
 sourcesRouter.use(requireAuth);
@@ -23,6 +23,15 @@ sourcesRouter.get('/:id', async (req, res, next) => {
     const detail = await getSourceDetail(id);
     if (!detail) throw HttpError.notFound('Source not found');
     res.json(detail);
+  } catch (err) {
+    next(err);
+  }
+});
+
+sourcesRouter.get('/:id/chunks', async (req, res, next) => {
+  try {
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    res.json({ chunks: await getSourceChunks(id) });
   } catch (err) {
     next(err);
   }

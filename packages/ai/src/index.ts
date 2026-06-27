@@ -6,6 +6,7 @@
 export * from './types.js';
 export * from './chunk.js';
 export * from './rrf.js';
+export * from './rerank.js';
 export * from './sm2.js';
 export {
   createLlmProvider,

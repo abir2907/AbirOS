@@ -14,3 +14,4 @@ export * from './learning.js';
 export * from './planner.js';
 export * from './life.js';
 export * from './career.js';
+export * from './memory.js';

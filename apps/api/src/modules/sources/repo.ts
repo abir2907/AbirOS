@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 import { getDb, source, document, chunk } from '@abiros/db';
 import type { SourceSummary } from '@abiros/shared';
 import { getTagsForSource } from '../tags/repo.js';
@@ -62,6 +62,16 @@ export async function getSourceDetail(id: string) {
     preview: doc?.text ? doc.text.slice(0, 2000) : null,
     tags,
   };
+}
+
+/** All chunks of a source in order — used by the source viewer for deep-link citations. */
+export async function getSourceChunks(id: string) {
+  const db = getDb();
+  return db
+    .select({ id: chunk.id, ord: chunk.ord, text: chunk.text })
+    .from(chunk)
+    .where(eq(chunk.sourceId, id))
+    .orderBy(asc(chunk.ord));
 }
 
 export async function softDeleteSource(id: string): Promise<boolean> {

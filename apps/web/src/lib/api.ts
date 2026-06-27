@@ -511,6 +511,30 @@ export const listResumes = () => apiGet<{ versions: ResumeVersionRow[] }>('/api/
 export const getResume = (id: string) =>
   apiGet<{ id: string; label: string; content: string }>(`/api/developer/resume/${id}`);
 
+// ── Source viewer (deep-link citations) ──────────────────────────────────────
+export interface SourceChunk {
+  id: string;
+  ord: number;
+  text: string;
+}
+export const getSourceChunks = (id: string) =>
+  apiGet<{ chunks: SourceChunk[] }>(`/api/sources/${id}/chunks`);
+
+// ── Assistant memory ─────────────────────────────────────────────────────────
+export interface MemoryRow {
+  id: string;
+  content: string;
+  source: string;
+  createdAt: string;
+}
+export const getMemories = () => apiGet<{ memories: MemoryRow[] }>('/api/memory');
+export const addMemory = (content: string) => apiPost<MemoryRow>('/api/memory', { content });
+export const deleteMemory = (id: string) => apiDelete<{ ok: true }>(`/api/memory/${id}`);
+
+// ── Chat workflows (slash commands) ──────────────────────────────────────────
+export const getWorkflows = () =>
+  apiGet<{ workflows: { name: string; description: string }[] }>('/api/chat/workflows');
+
 export interface TimeMachineData {
   cumulative: { month: string; total: number }[];
   milestones: { date: string; title: string; detail: string | null }[];

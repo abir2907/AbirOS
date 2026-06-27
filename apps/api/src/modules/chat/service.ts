@@ -2,7 +2,9 @@ import type { ChatStreamEvent, Citation, SearchHit } from '@abiros/shared';
 import { getLlm } from '../../lib/ai.js';
 import { logger } from '../../lib/logger.js';
 import { hybridSearch } from '../search/service.js';
+import { recentMemories } from '../memory/repo.js';
 import { AGENT_TOOLS } from './tools.js';
+import { expandWorkflow } from './workflows.js';
 import * as repo from './repo.js';
 
 const MAX_STEPS = 5;
@@ -43,7 +45,7 @@ function buildContext(hits: SearchHit[]): { citations: Citation[]; block: string
     if (!nBySource.has(h.sourceId)) {
       const n = citations.length + 1;
       nBySource.set(h.sourceId, n);
-      citations.push({ n, sourceId: h.sourceId, title: h.sourceTitle, type: h.sourceType });
+      citations.push({ n, sourceId: h.sourceId, chunkId: h.chunkId, title: h.sourceTitle, type: h.sourceType });
     }
     lines.push(`[${nBySource.get(h.sourceId)}] (${h.sourceTitle})\n${h.text}`);
   }
@@ -78,17 +80,28 @@ export async function streamAnswer(
   await repo.addMessage(sessionId, 'user', userContent);
   const provider = getLlm();
 
+  // Slash commands (e.g. /prep-interview react) expand into a richer instruction.
+  const agentInput = expandWorkflow(userContent) ?? userContent;
+
+  // Inject long-term memory into the system prompts.
+  const memories = await recentMemories(20).catch(() => []);
+  const memoryBlock = memories.length
+    ? `\n\nKnown facts about the user (use when relevant):\n${memories.map((m) => `- ${m.content}`).join('\n')}`
+    : '';
+  const plannerSystem = PLANNER_SYSTEM + memoryBlock;
+  const answerSystem = ANSWER_SYSTEM + memoryBlock;
+
   const searchHits: SearchHit[] = [];
   const toolNotes: string[] = [];
   const called = new Set<string>();
   const transcript: { role: 'user' | 'assistant'; content: string }[] = [
-    { role: 'user', content: userContent },
+    { role: 'user', content: agentInput },
   ];
 
   // ── Phase A: autonomous tool loop ──────────────────────────────────────────
   try {
     for (let step = 0; step < MAX_STEPS; step++) {
-      const res = await provider.chat({ system: PLANNER_SYSTEM, messages: transcript, json: true });
+      const res = await provider.chat({ system: plannerSystem, messages: transcript, json: true });
       const decision = parseJson(res.content);
       if (!decision || decision.done || !decision.tool) break;
 
@@ -116,6 +129,15 @@ export async function streamAnswer(
         outText = truncate(JSON.stringify(out), 1500);
         toolNotes.push(`${decision.tool} →\n${outText}`);
       }
+
+      send({
+        type: 'tool',
+        name: decision.tool,
+        summary:
+          decision.tool === 'search_knowledge' && Array.isArray(out)
+            ? `${(out as SearchHit[]).length} snippet(s) found`
+            : truncate(outText.replace(/\s+/g, ' '), 80),
+      });
 
       transcript.push({ role: 'assistant', content: res.content });
       transcript.push({
@@ -145,14 +167,14 @@ export async function streamAnswer(
   if (block) parts.push(`Knowledge snippets:\n${block}`);
   if (toolNotes.length) parts.push(`Tool results:\n${toolNotes.join('\n\n')}`);
   const context = parts.join('\n\n---\n\n') || '(no relevant data found)';
-  const prompt = `${context}\n\n---\n\nUser request: ${userContent}`;
+  const prompt = `${context}\n\n---\n\nUser request: ${agentInput}`;
 
   send({ type: 'status', message: 'Thinking…' });
   let full = '';
   try {
     if (provider.stream) {
       for await (const chunk of provider.stream({
-        system: ANSWER_SYSTEM,
+        system: answerSystem,
         messages: [{ role: 'user', content: prompt }],
       })) {
         if (chunk.delta) {
@@ -161,7 +183,7 @@ export async function streamAnswer(
         }
       }
     } else {
-      const res = await provider.chat({ system: ANSWER_SYSTEM, messages: [{ role: 'user', content: prompt }] });
+      const res = await provider.chat({ system: answerSystem, messages: [{ role: 'user', content: prompt }] });
       full = res.content;
       send({ type: 'token', value: full });
     }

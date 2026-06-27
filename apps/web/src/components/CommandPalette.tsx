@@ -119,7 +119,7 @@ export function CommandPalette() {
               <Command.Item
                 key={h.chunkId}
                 value={h.chunkId}
-                onSelect={() => go('/search', { q })}
+                onSelect={() => go(`/knowledge/source/${h.sourceId}`, { chunkId: h.chunkId })}
                 className="flex cursor-pointer items-start gap-3 rounded-md px-3 py-2 text-sm aria-selected:bg-accent"
               >
                 <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

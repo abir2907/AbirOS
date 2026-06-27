@@ -6,6 +6,7 @@ import { dueFlashcards, countDue, knowledgeGaps } from '../learning/repo.js';
 import { listEvents, getPlan, listGoals } from '../planner/repo.js';
 import { listMetrics } from '../life/repo.js';
 import { expenseInsights } from '../life/service.js';
+import { addMemory } from '../memory/repo.js';
 
 /**
  * The agent tool registry — the typed functions the AI Command Center can call.
@@ -157,6 +158,25 @@ export const AGENT_TOOLS: Record<string, AgentTool> = {
       parameters: { type: 'object', properties: {} },
     },
     execute: () => listMetrics(),
+  },
+
+  remember_fact: {
+    def: {
+      name: 'remember_fact',
+      description:
+        'Save a durable fact about the user to long-term memory (a preference, goal, background detail). Use when the user shares something worth remembering for future chats.',
+      parameters: {
+        type: 'object',
+        properties: { fact: { type: 'string' } },
+        required: ['fact'],
+      },
+    },
+    execute: async (args) => {
+      const fact = String(args.fact ?? '').trim();
+      if (!fact) return { saved: false };
+      await addMemory(fact, 'assistant');
+      return { saved: true, fact };
+    },
   },
 };
 

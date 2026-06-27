@@ -41,20 +41,24 @@ interface HitRow {
   source_title: string;
   source_type: SearchHit['sourceType'];
   text: string;
+  ingested_at: Date | null;
 }
 
-/** Fetch display info for a set of chunk ids (order not guaranteed). */
-export async function hydrateChunks(chunkIds: string[]): Promise<Map<string, Omit<SearchHit, 'score'>>> {
+export type HydratedChunk = Omit<SearchHit, 'score'> & { ingestedAt: Date | null };
+
+/** Fetch display info (+ source recency) for a set of chunk ids. */
+export async function hydrateChunks(chunkIds: string[]): Promise<Map<string, HydratedChunk>> {
   if (chunkIds.length === 0) return new Map();
   const { rows } = await getPool().query<HitRow>(
     `SELECT c.id AS chunk_id, c.text, c.source_id,
-            s.title AS source_title, s.type AS source_type
+            s.title AS source_title, s.type AS source_type,
+            coalesce(s.ingested_at, s.created_at) AS ingested_at
        FROM chunk c
        JOIN source s ON s.id = c.source_id
       WHERE c.id = ANY($1::uuid[])`,
     [chunkIds],
   );
-  const map = new Map<string, Omit<SearchHit, 'score'>>();
+  const map = new Map<string, HydratedChunk>();
   for (const r of rows) {
     map.set(r.chunk_id, {
       chunkId: r.chunk_id,
@@ -62,6 +66,7 @@ export async function hydrateChunks(chunkIds: string[]): Promise<Map<string, Omi
       sourceTitle: r.source_title,
       sourceType: r.source_type,
       text: r.text,
+      ingestedAt: r.ingested_at,
     });
   }
   return map;
