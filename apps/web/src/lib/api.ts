@@ -202,3 +202,70 @@ export const listRepos = () => apiGet<{ repos: RepoRow[] }>('/api/developer/repo
 export const searchCode = (query: string) =>
   apiPost<{ query: string; hits: CodeHit[] }>('/api/developer/code/search', { query });
 export const getAnalyzer = () => apiGet<CareerInsights>('/api/developer/analyzer');
+
+// ── Learning ─────────────────────────────────────────────────────────────────
+export type Rating = 'again' | 'hard' | 'good' | 'easy';
+export interface FlashcardRow {
+  id: string;
+  sourceId: string | null;
+  front: string;
+  back: string;
+  dueAt: string;
+  reps: number;
+}
+export interface SummaryRow {
+  sourceId: string;
+  text: string;
+  keyPoints: string[];
+}
+export interface QuizRow {
+  id: string;
+  title: string;
+  sourceId: string | null;
+  createdAt: string;
+}
+export interface QuizQuestionPublic {
+  id: string;
+  ord: number;
+  question: string;
+  options: string[];
+}
+export interface AttemptResult {
+  score: number;
+  total: number;
+  results: { correct: boolean; chosen: number; answerIndex: number; explanation: string | null }[];
+}
+export interface Gap {
+  sourceId: string;
+  title: string;
+  cards: number;
+  avgEase: number;
+  lapses: number;
+  overdue: number;
+}
+
+export const summarizeSource = (sourceId: string) =>
+  apiPost<SummaryRow>('/api/learning/summary', { sourceId });
+export const generateFlashcards = (sourceId: string, n?: number) =>
+  apiPost<{ created: number }>('/api/learning/flashcards/generate', { sourceId, n });
+export const getDueFlashcards = () =>
+  apiGet<{ count: number; cards: FlashcardRow[] }>('/api/learning/flashcards/due');
+export const reviewFlashcard = (id: string, rating: Rating) =>
+  apiPost<FlashcardRow>(`/api/learning/flashcards/${id}/review`, { rating });
+export const generateQuiz = (sourceId: string, n?: number) =>
+  apiPost<QuizRow>('/api/learning/quiz/generate', { sourceId, n });
+export const listQuizzes = () => apiGet<{ quizzes: QuizRow[] }>('/api/learning/quiz');
+export const getQuiz = (id: string) =>
+  apiGet<{ quiz: QuizRow; questions: QuizQuestionPublic[] }>(`/api/learning/quiz/${id}`);
+export const attemptQuiz = (id: string, answers: number[]) =>
+  apiPost<AttemptResult>(`/api/learning/quiz/${id}/attempt`, { answers });
+export const getGaps = () => apiGet<{ gaps: Gap[] }>('/api/learning/gaps');
+
+// ── Knowledge graph ──────────────────────────────────────────────────────────
+export interface GraphData {
+  nodes: { id: string; name: string; type: string; mentions: number }[];
+  edges: { source: string; target: string; type: string; weight: number }[];
+}
+export const getGraph = () => apiGet<GraphData>('/api/knowledge/graph');
+export const buildGraph = () =>
+  apiPost<{ sources: number; entities: number; relations: number }>('/api/knowledge/extract-all');

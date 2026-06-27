@@ -18,3 +18,10 @@ export function getEmbedder(): EmbeddingProvider {
 
 export const EMBED_MODEL_NAME =
   aiConfig.embeddingProvider === 'ollama' ? aiConfig.ollama.embedModel : aiConfig.openai.embedModel;
+
+export const CHAT_MODEL_NAME =
+  aiConfig.llmProvider === 'ollama'
+    ? aiConfig.ollama.chatModel
+    : aiConfig.llmProvider === 'anthropic'
+      ? aiConfig.anthropic.model
+      : aiConfig.openai.model;

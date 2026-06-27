@@ -3,6 +3,27 @@
 Deviations from the master spec and notable architectural choices, with reasons.
 Append-only; newest at top.
 
+## Phase 3
+
+- **Knowledge map renders with `d3-force` + plain SVG**, not a heavy graph library
+  (react-force-graph / cytoscape). The layout is computed client-side (300 ticks,
+  deterministic) and drawn as SVG — smaller, dependency-light, and reliable with
+  Vite. A richer interactive lib can be swapped in later if needed.
+
+- **Quiz answers are withheld from the client.** `GET /quiz/:id` returns questions
+  without `answerIndex`; grading happens server-side in `POST /quiz/:id/attempt`,
+  so the correct answers can't be peeked from the network tab.
+
+- **SM-2 lives as a pure function** in `@abiros/ai` (`schedule()`), unit-tested.
+  Rating→quality mapping: again=1, hard=3, good=4, easy=5; ease floor 1.3.
+
+- **Learning generation (summaries/flashcards/quizzes) and graph extraction are
+  on-demand**, not part of ingestion — they cost LLM calls, so the user triggers
+  them per source. `extract-all` is bounded to 25 sources per run.
+
+- **Entities upsert by select-then-insert** on `normalized_name` (no unique
+  constraint added) — fine for a single-user app with no write concurrency.
+
 ## Phase 2
 
 - **Code Historian uses full-text search, not embeddings.** Commit messages + repo

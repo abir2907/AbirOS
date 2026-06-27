@@ -10,3 +10,4 @@ export * from './graph.js';
 export * from './app.js';
 export * from './projects.js';
 export * from './developer.js';
+export * from './learning.js';

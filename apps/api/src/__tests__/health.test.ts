@@ -25,7 +25,15 @@ describe('module stubs', () => {
   });
 
   it('protects real modules with auth', async () => {
-    for (const path of ['/api/search', '/api/developer/repos', '/api/projects', '/api/tags']) {
+    for (const path of [
+      '/api/search',
+      '/api/developer/repos',
+      '/api/projects',
+      '/api/tags',
+      '/api/learning/flashcards/due',
+      '/api/learning/gaps',
+      '/api/knowledge/graph',
+    ]) {
       const res = await request(app).get(path);
       expect(res.status, `${path} should require auth`).toBe(401);
     }

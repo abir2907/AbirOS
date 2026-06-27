@@ -8,10 +8,10 @@ Single-user, self-hosted, and **$0 to run**: local AI via Ollama, vectors in
 Postgres via `pgvector`, files on local disk. The only cloud piece is Neon's free
 Postgres tier (swappable for local Postgres by changing one connection string).
 
-> **Status: Phase 2 complete.** On top of Phase 1: screenshot/image ingestion with
-> OCR, web-page archiving, auto-tagging, project memory, and the **Developer**
-> module — GitHub sync, Code Historian (commit/repo search), and a Career Analyzer.
-> Remaining modules fill in over Phases 3–6 (see [the build plan](#build-phases)).
+> **Status: Phase 3 complete.** On top of Phases 1–2, the **Learning** module is
+> live: per-source summaries, **flashcards with SM-2 spaced repetition**, quiz
+> generation/attempts, a **knowledge-map** graph view, and gap detection. Remaining
+> modules fill in over Phases 4–6 (see [the build plan](#build-phases)).
 
 ---
 
@@ -176,6 +176,23 @@ with the LLM, and supports **project memory** (create a project, assign sources)
 
 The Command Center also gains `search_code` and `get_github_activity` agent tools.
 
+## Phase 3 — what's new
+
+After `pnpm db:migrate` adds the Learning tables, the **Learning** module (needs
+Ollama for generation) offers five tabs:
+
+- **Review** — spaced-repetition flashcards (SM-2). Show the answer, rate
+  Again/Hard/Good/Easy; the scheduler sets the next due date.
+- **Study tools** — pick any ready source → generate a **summary**, **flashcards**,
+  or a **quiz** from it.
+- **Quizzes** — take a generated multiple-choice quiz; it's graded server-side
+  with per-question explanations.
+- **Knowledge map** — click **Build map** to extract entities/relations from your
+  sources, then explore the force-directed graph.
+- **Gaps** — topics ranked by how much you're forgetting (lapses + overdue cards).
+
+New agent tools: `get_due_flashcards`, `create_study_plan`.
+
 ## Scripts
 
 | Command | What it does |
@@ -198,8 +215,8 @@ Built incrementally; each phase ships fully and runnable before the next starts.
 
 0. **Scaffold** — monorepo, provider interfaces, Express boot, web shell. ✅
 1. **Foundation** — auth, ingestion pipeline (note/PDF/URL), hybrid search, AI Command Center. ✅
-2. **Second Brain + Developer** — screenshots/OCR, web archive, auto-tagging, project memory, GitHub sync, Code Historian, Career Analyzer. ← *you are here*
-3. Learning (summaries, flashcards, quizzes, knowledge graph).
+2. **Second Brain + Developer** — screenshots/OCR, web archive, auto-tagging, project memory, GitHub sync, Code Historian, Career Analyzer. ✅
+3. **Learning** — summaries, flashcards (SM-2), quizzes, knowledge-map, gap detection. ← *you are here*
 4. Planner (daily plan, goal simulator, university companion).
 5. Life (metrics, expense detective, timeline, dataset export).
 6. Polish (interview voice, resume tailoring, dashboards, forecasts).

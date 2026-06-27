@@ -2,6 +2,7 @@ import type { ToolDef } from '@abiros/ai';
 import { hybridSearch } from '../search/service.js';
 import { listSources, getSourceDetail } from '../sources/repo.js';
 import { searchCode, recentActivity } from '../developer/repo.js';
+import { dueFlashcards, countDue, knowledgeGaps } from '../learning/repo.js';
 
 /**
  * The agent tool registry — the typed functions the AI Command Center can call.
@@ -81,6 +82,32 @@ export const AGENT_TOOLS: Record<string, AgentTool> = {
       },
     },
     execute: (args) => recentActivity(Number(args.days ?? 30)),
+  },
+
+  get_due_flashcards: {
+    def: {
+      name: 'get_due_flashcards',
+      description: 'Flashcards that are due for spaced-repetition review right now.',
+      parameters: { type: 'object', properties: { limit: { type: 'number' } } },
+    },
+    execute: async (args) => ({
+      count: await countDue(),
+      cards: await dueFlashcards(Number(args.limit ?? 20)),
+    }),
+  },
+
+  create_study_plan: {
+    def: {
+      name: 'create_study_plan',
+      description:
+        'Gather the material for a study plan: due flashcards and the weakest topics (knowledge gaps).',
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: async () => ({
+      dueCount: await countDue(),
+      dueCards: await dueFlashcards(15),
+      gaps: await knowledgeGaps(),
+    }),
   },
 };
 
