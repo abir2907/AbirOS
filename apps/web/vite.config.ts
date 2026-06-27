@@ -46,4 +46,13 @@ export default defineConfig({
       '/health': { target: `http://localhost:${process.env.API_PORT || 4000}`, changeOrigin: true },
     },
   },
+  // `vite preview` (production build) needs its own proxy so the installable
+  // PWA can reach the API while you test it locally.
+  preview: {
+    port: Number(process.env.WEB_PORT) || 5173,
+    proxy: {
+      '/api': { target: `http://localhost:${process.env.API_PORT || 4000}`, changeOrigin: true },
+      '/health': { target: `http://localhost:${process.env.API_PORT || 4000}`, changeOrigin: true },
+    },
+  },
 });
