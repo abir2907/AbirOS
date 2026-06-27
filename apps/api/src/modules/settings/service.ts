@@ -50,6 +50,11 @@ const USAGE_TABLES = [
   'book',
   'place',
   'trip',
+  'meal_log',
+  'workout',
+  'biomarker',
+  'lc_problem',
+  'skill',
 ];
 
 /** Approximate DB usage (row counts) so the user can watch the Neon free tier. */
@@ -96,6 +101,15 @@ const PURGE_TABLES = [
   'sport_interest',
   'place',
   'trip',
+  'meal_log',
+  'workout',
+  'exercise',
+  'biomarker',
+  'leetcode_profile',
+  'lc_problem',
+  'lc_submission',
+  'skill',
+  'resume_analysis',
 ];
 
 export async function purgeAll() {

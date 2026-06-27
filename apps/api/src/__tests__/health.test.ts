@@ -44,6 +44,10 @@ describe('module mounting', () => {
       '/api/learning/study',
       '/api/collections/books',
       '/api/collections/places',
+      '/api/life/diet',
+      '/api/life/gym',
+      '/api/life/health/biomarkers',
+      '/api/developer/leetcode/stats',
     ]) {
       const res = await request(app).get(path);
       expect(res.status, `${path} should require auth`).toBe(401);

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { ApiRequestError, generateResume, getResume, listResumes, tailorResume } from '@/lib/api';
+import { analyzeResume, ApiRequestError, generateResume, getResume, listResumes, tailorResume } from '@/lib/api';
 
 export function ResumeTab() {
   const qc = useQueryClient();
@@ -30,6 +30,7 @@ export function ResumeTab() {
       setSelected(v.id);
     },
   });
+  const analyze = useMutation({ mutationFn: () => analyzeResume(jd.trim() || undefined) });
   const current = useQuery({
     queryKey: ['resume', selected],
     queryFn: () => getResume(selected!),
@@ -91,10 +92,41 @@ export function ResumeTab() {
                 placeholder="Paste a job description…"
                 className="mb-2 min-h-24"
               />
-              <Button disabled={!jd.trim() || tailor.isPending} onClick={() => tailor.mutate()}>
-                {tailor.isPending && <Loader2 className="size-4 animate-spin" />}
-                Tailor resume
-              </Button>
+              <div className="flex gap-2">
+                <Button disabled={!jd.trim() || tailor.isPending} onClick={() => tailor.mutate()}>
+                  {tailor.isPending && <Loader2 className="size-4 animate-spin" />}
+                  Tailor resume
+                </Button>
+                <Button variant="secondary" disabled={analyze.isPending} onClick={() => analyze.mutate()}>
+                  {analyze.isPending && <Loader2 className="size-4 animate-spin" />}
+                  Analyze{jd.trim() ? ' vs JD' : ''}
+                </Button>
+              </div>
+              {analyze.data && (
+                <div className="mt-3 space-y-2 rounded-md bg-muted/40 p-3 text-sm">
+                  {analyze.data.result.overall != null && (
+                    <div className="font-medium">Overall: {analyze.data.result.overall}/100</div>
+                  )}
+                  {analyze.data.result.gaps?.length ? (
+                    <div>
+                      <span className="text-muted-foreground">Gaps:</span> {analyze.data.result.gaps.join('; ')}
+                    </div>
+                  ) : null}
+                  {analyze.data.result.suggestedBullets?.length ? (
+                    <div>
+                      <span className="text-muted-foreground">Suggested bullets:</span>
+                      <ul className="ml-4 list-disc">
+                        {analyze.data.result.suggestedBullets.map((b, i) => (
+                          <li key={i}>{b}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {analyze.data.result.alignment && (
+                    <div className="text-muted-foreground">{analyze.data.result.alignment}</div>
+                  )}
+                </div>
+              )}
             </div>
           </>
         ) : (

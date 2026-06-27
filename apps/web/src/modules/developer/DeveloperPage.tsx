@@ -28,6 +28,7 @@ import {
   MessageSquareText,
   FileText,
   History,
+  Code2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,13 +46,15 @@ import {
 import { InterviewTab } from './InterviewTab';
 import { ResumeTab } from './ResumeTab';
 import { TimeMachineTab } from './TimeMachineTab';
+import { LeetCodeTab } from './LeetCodeTab';
 
 const ACCENT = 'hsl(243 80% 67%)';
 
-type DevTab = 'overview' | 'interview' | 'resume' | 'timemachine';
+type DevTab = 'overview' | 'leetcode' | 'interview' | 'resume' | 'timemachine';
 
 const DEV_TABS: { id: DevTab; label: string; icon: typeof LayoutGrid }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutGrid },
+  { id: 'leetcode', label: 'LeetCode', icon: Code2 },
   { id: 'interview', label: 'Interview Coach', icon: MessageSquareText },
   { id: 'resume', label: 'Resume', icon: FileText },
   { id: 'timemachine', label: 'Time Machine', icon: History },
@@ -88,6 +91,7 @@ export function DeveloperPage() {
       </div>
 
       {tab === 'overview' && <DevOverview />}
+      {tab === 'leetcode' && <LeetCodeTab />}
       {tab === 'interview' && <InterviewTab />}
       {tab === 'resume' && <ResumeTab />}
       {tab === 'timemachine' && <TimeMachineTab />}

@@ -282,6 +282,26 @@ New agent tools: `get_music_taste`, `get_books`, `recommend_book`,
 `get_sports_interests`, `get_places`, `plan_trip`. Try: *"plan a weekend from my
 travel wishlist"* or *"recommend me a book"*.
 
+## Extension — Stage C: Body & career
+
+Run `pnpm db:migrate`, then:
+
+- **Life → Body** — log **meals** (calories/protein) and **workouts** (with a
+  consistency streak); and a **Health** card that **extracts biomarkers from a
+  blood-test PDF** you ingested in Knowledge. ⚠️ *Health is a personal tracker,
+  **not medical advice** — it shows values vs your report's own reference ranges;
+  consult a doctor for interpretation.*
+- **Developer → LeetCode** — enter your public username and **Sync** (LeetCode's
+  free/unofficial public API): solved counts, ranking, recent problems, search,
+  and a "weak topics" hint. Feeds a DSA skill signal.
+- **Developer → Resume → Analyze** — scores your resume and suggests bullets
+  **grounded in your real GitHub / LeetCode / accomplishments**, optionally against
+  a pasted job description.
+
+New agent tools: `get_diet`, `get_gym`, `get_biomarkers`, `get_leetcode_stats`,
+`search_solved_problems`, `weak_topics`, `analyze_resume`. Try: *"am I ready for a
+DSA interview based on my LeetCode?"* or *"analyze my resume for this JD"*.
+
 ## Scripts
 
 | Command | What it does |

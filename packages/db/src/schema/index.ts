@@ -17,3 +17,5 @@ export * from './career.js';
 export * from './memory.js';
 export * from './me.js';
 export * from './collections.js';
+export * from './body.js';
+export * from './career2.js';

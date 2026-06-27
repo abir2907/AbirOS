@@ -5,6 +5,34 @@ import { HttpError } from '../../lib/errors.js';
 import * as repo from './repo.js';
 import * as svc from './service.js';
 import * as s from './schemas.js';
+import * as diet from './diet.js';
+import * as gym from './gym.js';
+import * as health from './health.js';
+
+const mealSchema = z.object({
+  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
+  items: z.array(z.string()).optional(),
+  calories: z.number().optional(),
+  proteinG: z.number().optional(),
+  carbsG: z.number().optional(),
+  fatG: z.number().optional(),
+  notes: z.string().optional(),
+});
+const workoutSchema = z.object({
+  type: z.enum(['strength', 'cardio', 'mobility']).optional(),
+  durationMin: z.number().int().optional(),
+  notes: z.string().optional(),
+  sets: z
+    .array(
+      z.object({
+        exerciseName: z.string().optional(),
+        reps: z.number().int().optional(),
+        weight: z.number().optional(),
+        rpe: z.number().optional(),
+      }),
+    )
+    .optional(),
+});
 
 export const lifeRouter: RouterType = Router();
 lifeRouter.use(requireAuth);
@@ -118,6 +146,91 @@ lifeRouter.get('/correlations', async (_req, res, next) => {
 lifeRouter.get('/weekly-review', async (_req, res, next) => {
   try {
     res.json(await svc.weeklyReview());
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Diet ──────────────────────────────────────────────────────────────────────
+lifeRouter.get('/diet', async (_req, res, next) => {
+  try {
+    res.json({ meals: await diet.listMeals(), summary: await diet.dietSummary(14) });
+  } catch (err) {
+    next(err);
+  }
+});
+lifeRouter.post('/diet', async (req, res, next) => {
+  try {
+    res.status(201).json(await diet.addMeal(mealSchema.parse(req.body)));
+  } catch (err) {
+    next(err);
+  }
+});
+lifeRouter.delete('/diet/:id', async (req, res, next) => {
+  try {
+    const { id } = idParam.parse(req.params);
+    if (!(await diet.deleteMeal(id))) throw HttpError.notFound('Meal not found');
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Gym ───────────────────────────────────────────────────────────────────────
+lifeRouter.get('/gym', async (_req, res, next) => {
+  try {
+    res.json({ workouts: await gym.listWorkouts(), consistency: await gym.workoutConsistency() });
+  } catch (err) {
+    next(err);
+  }
+});
+lifeRouter.post('/gym', async (req, res, next) => {
+  try {
+    res.status(201).json(await gym.addWorkout(workoutSchema.parse(req.body)));
+  } catch (err) {
+    next(err);
+  }
+});
+lifeRouter.get('/gym/:id/sets', async (req, res, next) => {
+  try {
+    const { id } = idParam.parse(req.params);
+    res.json({ sets: await gym.workoutSets(id) });
+  } catch (err) {
+    next(err);
+  }
+});
+lifeRouter.delete('/gym/:id', async (req, res, next) => {
+  try {
+    const { id } = idParam.parse(req.params);
+    if (!(await gym.deleteWorkout(id))) throw HttpError.notFound('Workout not found');
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Health / biomarkers (NOT medical advice) ──────────────────────────────────
+lifeRouter.post('/health/extract', async (req, res, next) => {
+  try {
+    const { sourceId } = z.object({ sourceId: z.string().uuid() }).parse(req.body);
+    res.json({ ...(await health.extractBiomarkers(sourceId)), disclaimer: health.HEALTH_DISCLAIMER });
+  } catch (err) {
+    next(err);
+  }
+});
+lifeRouter.get('/health/biomarkers', async (_req, res, next) => {
+  try {
+    res.json({ biomarkers: await health.listBiomarkers(), disclaimer: health.HEALTH_DISCLAIMER });
+  } catch (err) {
+    next(err);
+  }
+});
+lifeRouter.get('/health/biomarkers/:name', async (req, res, next) => {
+  try {
+    const name = z.string().min(1).parse(req.params.name);
+    const data = await health.biomarkerSeries(name);
+    if (!data) throw HttpError.notFound('Biomarker not found');
+    res.json({ ...data, disclaimer: health.HEALTH_DISCLAIMER });
   } catch (err) {
     next(err);
   }

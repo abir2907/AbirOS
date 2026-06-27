@@ -12,6 +12,8 @@ import {
   listResumeVersions,
   getResumeVersion,
 } from './resume.js';
+import { syncLeetcode, getLeetcodeProfile, searchSolvedProblems, weakTopics } from './leetcode.js';
+import { analyzeResume } from './resumeAnalysis.js';
 
 export const developerRouter: RouterType = Router();
 developerRouter.use(requireAuth);
@@ -63,6 +65,48 @@ developerRouter.get('/activity', async (req, res, next) => {
 developerRouter.get('/time-machine', async (_req, res, next) => {
   try {
     res.json(await timeMachine());
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── LeetCode ─────────────────────────────────────────────────────────────────
+developerRouter.post('/leetcode/sync', async (req, res, next) => {
+  try {
+    const { username } = z.object({ username: z.string().min(1).max(60) }).parse(req.body);
+    res.json(await syncLeetcode(username));
+  } catch (err) {
+    next(err);
+  }
+});
+developerRouter.get('/leetcode/stats', async (_req, res, next) => {
+  try {
+    res.json((await getLeetcodeProfile()) ?? null);
+  } catch (err) {
+    next(err);
+  }
+});
+developerRouter.post('/leetcode/search', async (req, res, next) => {
+  try {
+    const { query } = z.object({ query: z.string().min(1) }).parse(req.body);
+    res.json({ results: await searchSolvedProblems(query) });
+  } catch (err) {
+    next(err);
+  }
+});
+developerRouter.get('/leetcode/weak-topics', async (_req, res, next) => {
+  try {
+    res.json(await weakTopics());
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Resume analysis ──────────────────────────────────────────────────────────
+developerRouter.post('/resume/analyze', async (req, res, next) => {
+  try {
+    const { targetJd } = z.object({ targetJd: z.string().optional() }).parse(req.body ?? {});
+    res.json(await analyzeResume(targetJd));
   } catch (err) {
     next(err);
   }

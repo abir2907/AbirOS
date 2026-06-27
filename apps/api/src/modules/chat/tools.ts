@@ -11,6 +11,11 @@ import { getProfile, listInterests, listAccomplishments } from '../profile/repo.
 import { listStudyItems, suggestNextStudy } from '../learning/study.js';
 import { listBooks, listSports, listPlaces } from '../collections/repo.js';
 import { musicTaste, recommendBook, planTrip } from '../collections/service.js';
+import { dietSummary } from '../life/diet.js';
+import { workoutConsistency } from '../life/gym.js';
+import { listBiomarkers, HEALTH_DISCLAIMER } from '../life/health.js';
+import { getLeetcodeProfile, searchSolvedProblems, weakTopics } from '../developer/leetcode.js';
+import { analyzeResume } from '../developer/resumeAnalysis.js';
 import type { InterestCategory, StudyStatus, BookStatus, PlaceStatus } from '@abiros/shared';
 
 /**
@@ -289,6 +294,71 @@ export const AGENT_TOOLS: Record<string, AgentTool> = {
       await addMemory(fact, 'assistant');
       return { saved: true, fact };
     },
+  },
+
+  get_diet: {
+    def: {
+      name: 'get_diet',
+      description: "Daily calorie/macro totals from the user's logged meals (last N days, default 7).",
+      parameters: { type: 'object', properties: { days: { type: 'number' } } },
+    },
+    execute: (args) => dietSummary(Number(args.days ?? 7)),
+  },
+
+  get_gym: {
+    def: {
+      name: 'get_gym',
+      description: "The user's workout consistency: per-day counts, total, and current streak.",
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => workoutConsistency(),
+  },
+
+  get_biomarkers: {
+    def: {
+      name: 'get_biomarkers',
+      description:
+        "Latest blood-test biomarkers vs the report's reference ranges. NOT medical advice — only describe the numbers and recommend seeing a doctor.",
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: async () => ({ biomarkers: await listBiomarkers(), disclaimer: HEALTH_DISCLAIMER }),
+  },
+
+  get_leetcode_stats: {
+    def: {
+      name: 'get_leetcode_stats',
+      description: "The user's LeetCode solved counts and ranking.",
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => getLeetcodeProfile(),
+  },
+
+  search_solved_problems: {
+    def: {
+      name: 'search_solved_problems',
+      description: "Search the user's solved LeetCode problems by title keyword.",
+      parameters: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
+    },
+    execute: (args) => searchSolvedProblems(String(args.query ?? '')),
+  },
+
+  weak_topics: {
+    def: {
+      name: 'weak_topics',
+      description: 'Where the user is weakest on LeetCode (the difficulty bucket to focus on).',
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => weakTopics(),
+  },
+
+  analyze_resume: {
+    def: {
+      name: 'analyze_resume',
+      description:
+        "Analyze the user's resume against their real GitHub/LeetCode/accomplishments (and an optional job description).",
+      parameters: { type: 'object', properties: { target_jd: { type: 'string' } } },
+    },
+    execute: (args) => analyzeResume(args.target_jd ? String(args.target_jd) : undefined),
   },
 };
 

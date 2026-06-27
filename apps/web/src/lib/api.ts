@@ -416,6 +416,91 @@ export const deletePlace = (id: string) => apiDelete<{ ok: true }>(`/api/collect
 export const planTrip = (query?: string) =>
   apiPost<{ itinerary: string; places: string[] }>('/api/collections/trips/plan', query ? { query } : {});
 
+// ── Body (Stage C) ────────────────────────────────────────────────────────────
+export interface MealRow {
+  id: string;
+  mealType: string;
+  calories: number | null;
+  proteinG: number | null;
+  eatenAt: string;
+  notes: string | null;
+}
+export interface DietDay {
+  day: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  meals: number;
+}
+export const getDiet = () => apiGet<{ meals: MealRow[]; summary: DietDay[] }>('/api/life/diet');
+export const addMeal = (body: { mealType?: string; calories?: number; proteinG?: number; notes?: string }) =>
+  apiPost<MealRow>('/api/life/diet', body);
+export const deleteMeal = (id: string) => apiDelete<{ ok: true }>(`/api/life/diet/${id}`);
+
+export interface WorkoutRow {
+  id: string;
+  type: string;
+  durationMin: number | null;
+  performedAt: string;
+  notes: string | null;
+}
+export interface GymConsistency {
+  byDay: { day: string; n: number }[];
+  total: number;
+  streak: number;
+}
+export const getGym = () => apiGet<{ workouts: WorkoutRow[]; consistency: GymConsistency }>('/api/life/gym');
+export const addWorkout = (body: { type?: string; durationMin?: number; notes?: string }) =>
+  apiPost<WorkoutRow>('/api/life/gym', body);
+export const deleteWorkout = (id: string) => apiDelete<{ ok: true }>(`/api/life/gym/${id}`);
+
+export interface BiomarkerRow {
+  name: string;
+  unit: string | null;
+  value: number;
+  reference_low: number | null;
+  reference_high: number | null;
+  out_of_range: boolean;
+  taken_on: string | null;
+}
+export const getBiomarkers = () =>
+  apiGet<{ biomarkers: BiomarkerRow[]; disclaimer: string }>('/api/life/health/biomarkers');
+export const extractBiomarkers = (sourceId: string) =>
+  apiPost<{ extracted: number; disclaimer: string }>('/api/life/health/extract', { sourceId });
+
+// ── Career (Stage C) ──────────────────────────────────────────────────────────
+export interface LeetcodeStats {
+  username: string;
+  totalSolved: number;
+  easy: number;
+  medium: number;
+  hard: number;
+  ranking: number | null;
+  lastSynced: string | null;
+}
+export const syncLeetcode = (username: string) =>
+  apiPost<LeetcodeStats & { newSubmissions: number }>('/api/developer/leetcode/sync', { username });
+export const getLeetcodeStats = () => apiGet<LeetcodeStats | null>('/api/developer/leetcode/stats');
+export const searchSolved = (query: string) =>
+  apiPost<{ results: { slug: string; title: string; lang: string | null; submittedAt: string | null }[] }>(
+    '/api/developer/leetcode/search',
+    { query },
+  );
+export const getWeakTopics = () =>
+  apiGet<{ focus: string | null; counts: Record<string, number> | null; note: string }>(
+    '/api/developer/leetcode/weak-topics',
+  );
+export interface ResumeAnalysisResult {
+  overall?: number;
+  strengths?: string[];
+  gaps?: string[];
+  suggestedBullets?: string[];
+  alignment?: string;
+}
+export const analyzeResume = (targetJd?: string) =>
+  apiPost<{ result: ResumeAnalysisResult }>('/api/developer/resume/analyze', targetJd ? { targetJd } : {});
+
 // ── Planner ──────────────────────────────────────────────────────────────────
 export interface CalEvent {
   id: string;
