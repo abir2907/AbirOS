@@ -8,11 +8,12 @@ Single-user, self-hosted, and **$0 to run**: local AI via Ollama, vectors in
 Postgres via `pgvector`, files on local disk. The only cloud piece is Neon's free
 Postgres tier (swappable for local Postgres by changing one connection string).
 
-> **Status: Phase 4 complete.** On top of Phases 1–3, the **Planner** module is
-> live: a daily planner (calendar import via `.ics` + AI-generated time-blocked
-> plans), a **Goal Simulator** (roadmap + success-probability over time), and a
-> **University Companion** (courses, assignments, exams, exam-prep schedules).
-> Remaining modules fill in over Phases 5–6 (see [the build plan](#build-phases)).
+> **Status: Phase 5 complete.** On top of Phases 1–4, the **Life** module is live:
+> a metrics analytics dashboard with forecasting, an **Expense Detective** (CSV
+> import, category breakdown, subscription + unusual-charge detection, forecast),
+> **Life Replay** (a unified searchable timeline across every module), and a
+> **Personal Dataset Generator** (CSV/JSON export). Only **Phase 6** (polish)
+> remains (see [the build plan](#build-phases)).
 
 ---
 
@@ -209,6 +210,21 @@ After `pnpm db:migrate` adds the Planner tables, the **Planner** module has thre
 
 New agent tools: `get_calendar`, `get_tasks`, `get_goals`.
 
+## Phase 5 — what's new
+
+After `pnpm db:migrate` adds the Life tables, the **Life** module has four tabs:
+
+- **Analytics** — define any metric (sleep, gym, mood, coding minutes…), log values,
+  and see a chart with a simple trend **forecast**.
+- **Expenses** — add expenses or **import a CSV**; get a category breakdown, a
+  next-month **forecast**, **detected subscriptions**, and **unusual charges**.
+- **Life Replay** — one searchable **timeline** across notes, commits, expenses,
+  journal entries, and calendar events; plus a quick journal box.
+- **Dataset** — a daily-aggregated dataset of your activity, **downloadable as CSV**
+  (or JSON) to train your own models.
+
+New agent tools: `get_expenses`, `get_metrics`.
+
 ## Scripts
 
 | Command | What it does |
@@ -233,8 +249,8 @@ Built incrementally; each phase ships fully and runnable before the next starts.
 1. **Foundation** — auth, ingestion pipeline (note/PDF/URL), hybrid search, AI Command Center. ✅
 2. **Second Brain + Developer** — screenshots/OCR, web archive, auto-tagging, project memory, GitHub sync, Code Historian, Career Analyzer. ✅
 3. **Learning** — summaries, flashcards (SM-2), quizzes, knowledge-map, gap detection. ✅
-4. **Planner** — daily plan (.ics import), goal simulator, university companion. ← *you are here*
-5. Life (metrics, expense detective, timeline, dataset export).
+4. **Planner** — daily plan (.ics import), goal simulator, university companion. ✅
+5. **Life** — metrics analytics, expense detective, life replay timeline, dataset export. ← *you are here*
 6. Polish (interview voice, resume tailoring, dashboards, forecasts).
 
 See `DECISIONS.md` for deviations from the spec and why.

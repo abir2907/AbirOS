@@ -4,6 +4,8 @@ import { listSources, getSourceDetail } from '../sources/repo.js';
 import { searchCode, recentActivity } from '../developer/repo.js';
 import { dueFlashcards, countDue, knowledgeGaps } from '../learning/repo.js';
 import { listEvents, getPlan, listGoals } from '../planner/repo.js';
+import { listMetrics } from '../life/repo.js';
+import { expenseInsights } from '../life/service.js';
 
 /**
  * The agent tool registry — the typed functions the AI Command Center can call.
@@ -137,6 +139,24 @@ export const AGENT_TOOLS: Record<string, AgentTool> = {
       parameters: { type: 'object', properties: {} },
     },
     execute: () => listGoals(),
+  },
+
+  get_expenses: {
+    def: {
+      name: 'get_expenses',
+      description: 'Spending insights: totals, by category, detected subscriptions, and unusual charges.',
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => expenseInsights(),
+  },
+
+  get_metrics: {
+    def: {
+      name: 'get_metrics',
+      description: 'List of tracked life metrics (sleep, gym, mood, coding, …) with their latest values.',
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => listMetrics(),
   },
 };
 

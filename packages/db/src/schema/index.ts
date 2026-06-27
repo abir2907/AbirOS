@@ -12,3 +12,4 @@ export * from './projects.js';
 export * from './developer.js';
 export * from './learning.js';
 export * from './planner.js';
+export * from './life.js';

@@ -3,6 +3,27 @@
 Deviations from the master spec and notable architectural choices, with reasons.
 Append-only; newest at top.
 
+## Phase 5
+
+- **Life Replay timeline is computed on the fly** via a `UNION ALL` across sources,
+  commits, expenses, journal entries, and calendar events — no denormalized
+  `life_event` table to keep in sync, so it's always current.
+
+- **The Personal Dataset is generated on demand** (a daily-aggregate query over the
+  last 120 days) and streamed as CSV/JSON — not persisted, so no `dataset_export`
+  table. Re-running always reflects the latest activity.
+
+- **Analytics stay deliberately simple** (moving average + least-squares linear
+  forecast), per the spec's "keep ML simple at first." These live as pure,
+  unit-tested functions in `life/stats.ts`; a real model can replace them later.
+
+- **Subscription + anomaly detection are heuristics:** a merchant charged ≥3 times
+  at a steady amount (±15%) and interval is flagged recurring (weekly/monthly/
+  yearly); an expense >2.5σ from the mean is flagged unusual.
+
+- **`papaparse`** handles expense-CSV import; column names are matched leniently
+  (date/amount/merchant/category and common aliases).
+
 ## Phase 4
 
 - **"Scheduling" is on-demand generation, not recurring background jobs.** Daily

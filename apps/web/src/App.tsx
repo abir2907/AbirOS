@@ -10,10 +10,20 @@ import { KnowledgePage } from '@/modules/knowledge/KnowledgePage';
 import { DeveloperPage } from '@/modules/developer/DeveloperPage';
 import { LearningPage } from '@/modules/learning/LearningPage';
 import { PlannerPage } from '@/modules/planner/PlannerPage';
+import { LifePage } from '@/modules/life/LifePage';
 import { REGISTERED_MODULES } from '@/modules/registry';
 import { Button } from '@/components/ui/button';
 
-const LIVE = new Set(['dashboard', 'chat', 'search', 'knowledge', 'developer', 'learning', 'planner']);
+const LIVE = new Set([
+  'dashboard',
+  'chat',
+  'search',
+  'knowledge',
+  'developer',
+  'learning',
+  'planner',
+  'life',
+]);
 
 export default function App() {
   return (
@@ -28,6 +38,7 @@ export default function App() {
           <Route path="developer" element={<DeveloperPage />} />
           <Route path="learning" element={<LearningPage />} />
           <Route path="planner" element={<PlannerPage />} />
+          <Route path="life" element={<LifePage />} />
           {REGISTERED_MODULES.filter((m) => !LIVE.has(m.id)).map((m) => (
             <Route key={m.id} path={m.path.replace(/^\//, '')} element={<ModulePage module={m} />} />
           ))}

@@ -371,3 +371,88 @@ export const createExam = (body: { courseId: string; title: string; examAt?: str
 export const getTimetable = () => apiGet<{ slots: TimetableRow[] }>('/api/planner/timetable');
 export const generateExamPlan = () =>
   apiPost<{ sessions: { when: string; course?: string; focus: string }[] }>('/api/planner/exam-plan/generate');
+
+// ── Life ─────────────────────────────────────────────────────────────────────
+export interface MetricRow {
+  id: string;
+  name: string;
+  unit: string | null;
+  points: number;
+  last_value: number | null;
+  last_at: string | null;
+}
+export interface MetricAnalytics {
+  metric: { id: string; name: string; unit: string | null };
+  points: { value: number; recordedAt: string }[];
+  stats: { average: number; smoothed: number[]; count: number };
+  forecast: number[];
+}
+export interface ExpenseRow {
+  id: string;
+  spentOn: string;
+  amount: number;
+  category: string | null;
+  merchant: string | null;
+}
+export interface CategorySummary {
+  category: string;
+  total: number;
+  count: number;
+}
+export interface ExpenseInsights {
+  totalSpend: number;
+  monthly: { month: string; total: number }[];
+  forecastNextMonth: number;
+  categories: CategorySummary[];
+  recurring: { merchant: string; amount: number; count: number; cadence: string }[];
+  unusual: { id: string; merchant: string | null; amount: number; spentOn: string }[];
+}
+export interface TimelineEvent {
+  at: string;
+  type: string;
+  title: string;
+  detail: string | null;
+}
+export interface JournalRow {
+  id: string;
+  entryOn: string;
+  title: string | null;
+  content: string;
+  mood: number | null;
+}
+export interface DatasetRow {
+  date: string;
+  commits: number;
+  spend: number;
+  sources_added: number;
+  cards_reviewed: number;
+  journal_entries: number;
+}
+
+// metrics
+export const getMetrics = () => apiGet<{ metrics: MetricRow[] }>('/api/life/metrics');
+export const createMetric = (name: string, unit?: string) =>
+  apiPost<MetricRow>('/api/life/metrics', { name, unit });
+export const addMetricPoint = (id: string, value: number, note?: string) =>
+  apiPost('/api/life/metrics/' + id + '/points', { value, note });
+export const getMetric = (id: string) => apiGet<MetricAnalytics>(`/api/life/metrics/${id}`);
+
+// expenses
+export const getExpenses = () =>
+  apiGet<{ expenses: ExpenseRow[]; categories: CategorySummary[] }>('/api/life/expenses');
+export const addExpense = (body: { spentOn: string; amount: number; merchant?: string; category?: string }) =>
+  apiPost<ExpenseRow>('/api/life/expenses', body);
+export const importExpensesCsv = (csv: string) =>
+  apiPost<{ imported: number; skipped: number }>('/api/life/expenses/import', { csv });
+export const getExpenseInsights = () => apiGet<ExpenseInsights>('/api/life/expenses/insights');
+
+// journal + timeline
+export const getJournal = () => apiGet<{ entries: JournalRow[] }>('/api/life/journal');
+export const addJournal = (body: { entryOn: string; content: string; title?: string; mood?: number }) =>
+  apiPost<JournalRow>('/api/life/journal', body);
+export const getTimeline = (q?: string) =>
+  apiGet<{ events: TimelineEvent[] }>(`/api/life/timeline${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+
+// dataset
+export const getDataset = () => apiGet<{ rows: DatasetRow[] }>('/api/life/dataset');
+export const DATASET_CSV_URL = '/api/life/dataset?format=csv';
