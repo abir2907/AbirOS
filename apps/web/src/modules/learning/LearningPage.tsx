@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import { Brain, Layers, HelpCircle, Network, TrendingDown } from 'lucide-react';
+import { Brain, Layers, HelpCircle, Network, TrendingDown, BookMarked } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ReviewTab } from './ReviewTab';
 import { StudyToolsTab } from './StudyToolsTab';
 import { QuizzesTab } from './QuizzesTab';
 import { GapsTab } from './GapsTab';
 import { KnowledgeMap } from './KnowledgeMap';
+import { BacklogTab } from './BacklogTab';
 
-type TabId = 'review' | 'tools' | 'quizzes' | 'map' | 'gaps';
+type TabId = 'review' | 'tools' | 'quizzes' | 'backlog' | 'map' | 'gaps';
 
 const TABS: { id: TabId; label: string; icon: typeof Brain }[] = [
   { id: 'review', label: 'Review', icon: Brain },
   { id: 'tools', label: 'Study tools', icon: Layers },
   { id: 'quizzes', label: 'Quizzes', icon: HelpCircle },
+  { id: 'backlog', label: 'Backlog', icon: BookMarked },
   { id: 'map', label: 'Knowledge map', icon: Network },
   { id: 'gaps', label: 'Gaps', icon: TrendingDown },
 ];
@@ -51,6 +53,7 @@ export function LearningPage() {
       {tab === 'review' && <ReviewTab />}
       {tab === 'tools' && <StudyToolsTab />}
       {tab === 'quizzes' && <QuizzesTab />}
+      {tab === 'backlog' && <BacklogTab />}
       {tab === 'map' && <KnowledgeMap />}
       {tab === 'gaps' && <GapsTab />}
     </div>

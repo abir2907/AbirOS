@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Search,
   Settings,
+  User,
   type LucideIcon,
 } from 'lucide-react';
 import { MODULES, type ModuleDef } from '@abiros/shared';
@@ -40,6 +41,11 @@ const UI: Record<string, ModuleUi> = {
     icon: Brain,
     hint: 'Your second brain: ingested sources, notes, project memory, and the knowledge map.',
     comingSoon: ['Universal ingestion', 'Project memory', 'Entity/relation graph'],
+  },
+  profile: {
+    icon: User,
+    hint: 'Your self-model — what the assistant knows about you.',
+    comingSoon: ['Profile', 'Interests', 'Accomplishments'],
   },
   learning: {
     icon: GraduationCap,

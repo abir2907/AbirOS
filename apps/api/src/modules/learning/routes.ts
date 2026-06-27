@@ -1,10 +1,26 @@
 import { Router, type Router as RouterType } from 'express';
 import { z } from 'zod';
+import { STUDY_STATUSES } from '@abiros/shared';
 import { requireAuth } from '../../middleware/auth.js';
 import { HttpError } from '../../lib/errors.js';
 import { generateSchema, reviewSchema, attemptSchema } from './schemas.js';
 import { summarizeSource, makeFlashcards, makeQuiz, reviewCard } from './service.js';
 import * as repo from './repo.js';
+import * as study from './study.js';
+
+const createStudySchema = z.object({
+  topic: z.string().min(1).max(200),
+  status: z.enum(STUDY_STATUSES).optional(),
+  resourceLinks: z.array(z.string()).optional(),
+  priority: z.number().int().min(0).max(5).optional(),
+  notes: z.string().optional(),
+});
+const updateStudySchema = z.object({
+  topic: z.string().min(1).optional(),
+  status: z.enum(STUDY_STATUSES).optional(),
+  priority: z.number().int().min(0).max(5).optional(),
+  notes: z.string().optional(),
+});
 
 export const learningRouter: RouterType = Router();
 learningRouter.use(requireAuth);
@@ -113,6 +129,49 @@ learningRouter.post('/quiz/:id/attempt', async (req, res, next) => {
 learningRouter.get('/gaps', async (_req, res, next) => {
   try {
     res.json({ gaps: await repo.knowledgeGaps() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Study backlog ─────────────────────────────────────────────────────────────
+learningRouter.get('/study', async (req, res, next) => {
+  try {
+    const status = z.enum(STUDY_STATUSES).optional().parse(req.query.status);
+    res.json({ items: await study.listStudyItems(status) });
+  } catch (err) {
+    next(err);
+  }
+});
+learningRouter.post('/study', async (req, res, next) => {
+  try {
+    res.status(201).json(await study.addStudyItem(createStudySchema.parse(req.body)));
+  } catch (err) {
+    next(err);
+  }
+});
+learningRouter.post('/study/:id', async (req, res, next) => {
+  try {
+    const { id } = idParam.parse(req.params);
+    const row = await study.updateStudyItem(id, updateStudySchema.parse(req.body));
+    if (!row) throw HttpError.notFound('Study item not found');
+    res.json(row);
+  } catch (err) {
+    next(err);
+  }
+});
+learningRouter.delete('/study/:id', async (req, res, next) => {
+  try {
+    const { id } = idParam.parse(req.params);
+    if (!(await study.deleteStudyItem(id))) throw HttpError.notFound('Study item not found');
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+learningRouter.get('/study/suggest-next', async (_req, res, next) => {
+  try {
+    res.json(await study.suggestNextStudy());
   } catch (err) {
     next(err);
   }

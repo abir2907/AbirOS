@@ -3,6 +3,7 @@ import { getLlm } from '../../lib/ai.js';
 import { logger } from '../../lib/logger.js';
 import { hybridSearch } from '../search/service.js';
 import { recentMemories } from '../memory/repo.js';
+import { getSelfModel } from '../profile/selfModel.js';
 import { AGENT_TOOLS } from './tools.js';
 import { expandWorkflow } from './workflows.js';
 import * as repo from './repo.js';
@@ -83,13 +84,17 @@ export async function streamAnswer(
   // Slash commands (e.g. /prep-interview react) expand into a richer instruction.
   const agentInput = expandWorkflow(userContent) ?? userContent;
 
-  // Inject long-term memory into the system prompts.
-  const memories = await recentMemories(20).catch(() => []);
+  // Inject the self-model ("About Me") + long-term memory into the system prompts.
+  const [selfModel, memories] = await Promise.all([
+    getSelfModel().catch(() => ''),
+    recentMemories(20).catch(() => []),
+  ]);
+  const aboutBlock = selfModel ? `\n\n${selfModel}` : '';
   const memoryBlock = memories.length
     ? `\n\nKnown facts about the user (use when relevant):\n${memories.map((m) => `- ${m.content}`).join('\n')}`
     : '';
-  const plannerSystem = PLANNER_SYSTEM + memoryBlock;
-  const answerSystem = ANSWER_SYSTEM + memoryBlock;
+  const plannerSystem = PLANNER_SYSTEM + aboutBlock + memoryBlock;
+  const answerSystem = ANSWER_SYSTEM + aboutBlock + memoryBlock;
 
   const searchHits: SearchHit[] = [];
   const toolNotes: string[] = [];

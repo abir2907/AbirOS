@@ -43,6 +43,9 @@ const USAGE_TABLES = [
   'metric_point',
   'journal_entry',
   'chat_message',
+  'interest',
+  'accomplishment',
+  'study_item',
 ];
 
 /** Approximate DB usage (row counts) so the user can watch the Neon free tier. */
@@ -78,6 +81,11 @@ const PURGE_TABLES = [
   'entity',
   'tag',
   'project',
+  'profile',
+  'interest',
+  'accomplishment',
+  'study_item',
+  'user_memory',
 ];
 
 export async function purgeAll() {

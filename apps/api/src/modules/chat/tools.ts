@@ -7,6 +7,9 @@ import { listEvents, getPlan, listGoals } from '../planner/repo.js';
 import { listMetrics } from '../life/repo.js';
 import { expenseInsights } from '../life/service.js';
 import { addMemory } from '../memory/repo.js';
+import { getProfile, listInterests, listAccomplishments } from '../profile/repo.js';
+import { listStudyItems, suggestNextStudy } from '../learning/study.js';
+import type { InterestCategory, StudyStatus } from '@abiros/shared';
 
 /**
  * The agent tool registry — the typed functions the AI Command Center can call.
@@ -136,10 +139,63 @@ export const AGENT_TOOLS: Record<string, AgentTool> = {
   get_goals: {
     def: {
       name: 'get_goals',
-      description: 'The user\'s active goals.',
+      description: "The user's goals; optionally filter by horizon (short_term | long_term | life).",
+      parameters: { type: 'object', properties: { horizon: { type: 'string' } } },
+    },
+    execute: async (args) => {
+      const goals = await listGoals();
+      const h = args.horizon ? String(args.horizon) : '';
+      return h ? goals.filter((g) => g.horizon === h) : goals;
+    },
+  },
+
+  get_profile: {
+    def: {
+      name: 'get_profile',
+      description: "The user's self-profile: bio, personality, values, and how they like to be talked to.",
       parameters: { type: 'object', properties: {} },
     },
-    execute: () => listGoals(),
+    execute: () => getProfile(),
+  },
+
+  get_interests: {
+    def: {
+      name: 'get_interests',
+      description:
+        'The user\'s interests/tastes; optionally filter by category (music_genre, artist, food, hobby, sport, author, place, …).',
+      parameters: { type: 'object', properties: { category: { type: 'string' } } },
+    },
+    execute: (args) =>
+      listInterests(args.category ? (String(args.category) as InterestCategory) : undefined),
+  },
+
+  get_accomplishments: {
+    def: {
+      name: 'get_accomplishments',
+      description: 'Things the user has done / achieved.',
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => listAccomplishments(50),
+  },
+
+  get_study_backlog: {
+    def: {
+      name: 'get_study_backlog',
+      description:
+        'The user\'s study backlog; optionally filter by status (want_to_study | studying | studied).',
+      parameters: { type: 'object', properties: { status: { type: 'string' } } },
+    },
+    execute: (args) =>
+      listStudyItems(args.status ? (String(args.status) as StudyStatus) : undefined),
+  },
+
+  suggest_next_study: {
+    def: {
+      name: 'suggest_next_study',
+      description: 'Recommend what to study next from the backlog, weak topics, due cards, and goals.',
+      parameters: { type: 'object', properties: {} },
+    },
+    execute: () => suggestNextStudy(),
   },
 
   get_expenses: {

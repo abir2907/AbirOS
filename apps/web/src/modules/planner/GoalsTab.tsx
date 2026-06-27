@@ -21,9 +21,10 @@ export function GoalsTab() {
   const [selected, setSelected] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [target, setTarget] = useState('');
+  const [horizon, setHorizon] = useState('short_term');
 
   const create = useMutation({
-    mutationFn: () => createGoal({ title: title.trim(), targetDate: target || undefined }),
+    mutationFn: () => createGoal({ title: title.trim(), targetDate: target || undefined, horizon }),
     onSuccess: (g) => {
       setTitle('');
       setTarget('');
@@ -31,6 +32,12 @@ export function GoalsTab() {
       setSelected(g.id);
     },
   });
+
+  const HORIZON_LABEL: Record<string, string> = {
+    short_term: 'short-term',
+    long_term: 'long-term',
+    life: 'life goal',
+  };
 
   return (
     <div className="grid gap-6 md:grid-cols-[280px_1fr]">
@@ -44,6 +51,15 @@ export function GoalsTab() {
         >
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="New goal…" />
           <Input type="date" value={target} onChange={(e) => setTarget(e.target.value)} />
+          <select
+            value={horizon}
+            onChange={(e) => setHorizon(e.target.value)}
+            className="h-9 w-full rounded-md border bg-transparent px-2 text-sm"
+          >
+            <option value="short_term">Short-term</option>
+            <option value="long_term">Long-term</option>
+            <option value="life">Life goal</option>
+          </select>
           <Button type="submit" size="sm" className="w-full" disabled={!title.trim()}>
             <Plus className="size-4" /> Add goal
           </Button>
@@ -60,7 +76,8 @@ export function GoalsTab() {
               )}
             >
               <Target className="size-4 shrink-0 text-muted-foreground" />
-              <span className="truncate">{g.title}</span>
+              <span className="flex-1 truncate">{g.title}</span>
+              <span className="shrink-0 text-[10px] text-muted-foreground">{HORIZON_LABEL[g.horizon] ?? ''}</span>
             </button>
           ))}
           {goals.data?.goals.length === 0 && (

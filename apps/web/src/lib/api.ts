@@ -54,6 +54,17 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
   );
 }
 
+export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
+  return handle<T>(
+    await fetch(path, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'include',
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
+  );
+}
+
 export async function apiDelete<T>(path: string): Promise<T> {
   return handle<T>(await fetch(path, { method: 'DELETE', credentials: 'include' }));
 }
@@ -295,6 +306,63 @@ export interface WeeklyReviewData {
 }
 export const getWeeklyReview = () => apiGet<WeeklyReviewData>('/api/life/weekly-review');
 
+// ── Me (self-model) ──────────────────────────────────────────────────────────
+export interface ProfileData {
+  bio: string | null;
+  personality: string | null;
+  coreValues: string[];
+  communicationPrefs: string | null;
+  summary: string | null;
+}
+export interface InterestRow {
+  id: string;
+  category: string;
+  label: string;
+  sentiment: string;
+  notes: string | null;
+}
+export interface AccomplishmentRow {
+  id: string;
+  title: string;
+  description: string | null;
+  happenedOn: string | null;
+}
+export const getMeData = () =>
+  apiGet<{ profile: ProfileData | null; interests: InterestRow[]; accomplishments: AccomplishmentRow[] }>(
+    '/api/profile',
+  );
+export const saveProfile = (body: {
+  bio?: string;
+  personality?: string;
+  coreValues?: string[];
+  communicationPrefs?: string;
+}) => apiPut<ProfileData>('/api/profile/profile', body);
+export const addInterest = (body: { category: string; label: string; sentiment?: string }) =>
+  apiPost<InterestRow>('/api/profile/interests', body);
+export const deleteInterest = (id: string) => apiDelete<{ ok: true }>(`/api/profile/interests/${id}`);
+export const addAccomplishment = (body: { title: string; description?: string; happenedOn?: string }) =>
+  apiPost<AccomplishmentRow>('/api/profile/accomplishments', body);
+export const deleteAccomplishment = (id: string) =>
+  apiDelete<{ ok: true }>(`/api/profile/accomplishments/${id}`);
+
+// ── Study backlog ────────────────────────────────────────────────────────────
+export interface StudyItemRow {
+  id: string;
+  topic: string;
+  status: string;
+  priority: number;
+  notes: string | null;
+}
+export const getStudyBacklog = (status?: string) =>
+  apiGet<{ items: StudyItemRow[] }>(`/api/learning/study${status ? `?status=${status}` : ''}`);
+export const addStudyItem = (body: { topic: string; priority?: number; notes?: string }) =>
+  apiPost<StudyItemRow>('/api/learning/study', body);
+export const updateStudyItem = (id: string, body: { status?: string; priority?: number }) =>
+  apiPost<StudyItemRow>(`/api/learning/study/${id}`, body);
+export const deleteStudyItem = (id: string) => apiDelete<{ ok: true }>(`/api/learning/study/${id}`);
+export const suggestNextStudy = () =>
+  apiGet<{ suggestion: string; dueCount: number; backlog: number }>('/api/learning/study/suggest-next');
+
 // ── Planner ──────────────────────────────────────────────────────────────────
 export interface CalEvent {
   id: string;
@@ -320,6 +388,8 @@ export interface GoalRow {
   description: string | null;
   targetDate: string | null;
   status: string;
+  horizon: string;
+  isLifeGoal: boolean;
 }
 export interface GoalDetail extends GoalRow {
   steps: { id: string; title: string; done: boolean }[];
@@ -372,8 +442,14 @@ export const togglePlanItem = (id: string, done: boolean) =>
 
 // goals
 export const getGoals = () => apiGet<{ goals: GoalRow[] }>('/api/planner/goals');
-export const createGoal = (body: { title: string; description?: string; targetDate?: string }) =>
-  apiPost<GoalRow>('/api/planner/goals', body);
+export const createGoal = (body: {
+  title: string;
+  description?: string;
+  targetDate?: string;
+  horizon?: string;
+  why?: string;
+  isLifeGoal?: boolean;
+}) => apiPost<GoalRow>('/api/planner/goals', body);
 export const getGoalDetail = (id: string) => apiGet<GoalDetail>(`/api/planner/goals/${id}`);
 export const deleteGoal = (id: string) => apiDelete<{ ok: true }>(`/api/planner/goals/${id}`);
 export const toggleStep = (id: string, done: boolean) =>

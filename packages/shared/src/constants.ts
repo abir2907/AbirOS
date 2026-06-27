@@ -36,6 +36,32 @@ export type LlmProviderId = (typeof LLM_PROVIDERS)[number];
 export const EMBEDDING_PROVIDERS = ['ollama', 'openai_compatible'] as const;
 export type EmbeddingProviderId = (typeof EMBEDDING_PROVIDERS)[number];
 
+/** Self-model taxonomy (the "Me" module). */
+export const INTEREST_CATEGORIES = [
+  'music_genre',
+  'artist',
+  'food',
+  'cuisine',
+  'hobby',
+  'sport',
+  'team',
+  'topic',
+  'author',
+  'place',
+  'app_tool',
+  'other',
+] as const;
+export type InterestCategory = (typeof INTEREST_CATEGORIES)[number];
+
+export const SENTIMENTS = ['love', 'like', 'neutral', 'dislike'] as const;
+export type Sentiment = (typeof SENTIMENTS)[number];
+
+export const GOAL_HORIZONS = ['short_term', 'long_term', 'life'] as const;
+export type GoalHorizon = (typeof GOAL_HORIZONS)[number];
+
+export const STUDY_STATUSES = ['want_to_study', 'studying', 'studied'] as const;
+export type StudyStatus = (typeof STUDY_STATUSES)[number];
+
 /**
  * Feature modules. `id` is used for API mount paths, web routes, nav, and the
  * `setting.enabled_modules` flags. `phase` documents when it gets real
@@ -78,6 +104,13 @@ export const MODULES: readonly ModuleDef[] = [
     description: 'Your second brain: sources, notes, project memory, and the knowledge map.',
     path: '/knowledge',
     phase: 1,
+  },
+  {
+    id: 'profile',
+    label: 'Me',
+    description: 'Your self-model: profile, interests, accomplishments, and goals the AI knows you by.',
+    path: '/me',
+    phase: 0,
   },
   {
     id: 'learning',

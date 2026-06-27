@@ -15,3 +15,4 @@ export * from './planner.js';
 export * from './life.js';
 export * from './career.js';
 export * from './memory.js';
+export * from './me.js';

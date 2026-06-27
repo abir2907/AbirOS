@@ -10,6 +10,7 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { timestamps, softDelete } from './_shared.js';
+import { goalHorizonEnum } from './me.js';
 
 // ── Goals + simulator ────────────────────────────────────────────────────────
 export const goal = pgTable('goal', {
@@ -18,6 +19,10 @@ export const goal = pgTable('goal', {
   description: text('description'),
   targetDate: date('target_date'),
   status: text('status').notNull().default('active'),
+  horizon: goalHorizonEnum('horizon').notNull().default('short_term'),
+  category: text('category'),
+  why: text('why'),
+  isLifeGoal: boolean('is_life_goal').notNull().default(false),
   ...timestamps,
   ...softDelete,
 });

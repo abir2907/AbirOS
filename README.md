@@ -245,6 +245,25 @@ After `pnpm db:migrate` adds the last tables:
 
 📖 See the full **[User Guide](USER_GUIDE.md)** for how to use every module.
 
+## Extension — Stage A: the "Me" core
+
+Run `pnpm db:migrate` to apply the new tables, then:
+
+- A new **Me** module: your **Profile** (bio, personality, values, how the AI should
+  talk to you), an **Interests** board (likes/dislikes by category), and
+  **Accomplishments** (which are also embedded into the knowledge base, so they're
+  searchable).
+- These compile into a budgeted **"About Me"** block injected into the Command
+  Center every turn — so it genuinely knows you. Try: *"what do you know about me?"*
+- **Goals** now have a **horizon** (short-term / long-term / life) — set it in
+  **Planner → Goals**; the assistant can filter by it.
+- A **study backlog** in **Learning → Backlog** (want-to-study / studying / studied)
+  with a **Suggest next** recommender that blends your backlog, weak topics, due
+  cards, and goals. Try: *"what should I study next?"*
+
+New agent tools: `get_profile`, `get_interests`, `get_accomplishments`,
+`get_study_backlog`, `suggest_next_study` (and `get_goals` now filters by horizon).
+
 ## Scripts
 
 | Command | What it does |
