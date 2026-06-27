@@ -40,6 +40,9 @@ export default defineConfig({
     },
   },
   server: {
+    // host: true exposes the dev server on your LAN so a phone on the same Wi-Fi
+    // can open it at http://<your-PC-IP>:5173 (Vite prints the "Network:" URL).
+    host: true,
     port: Number(process.env.WEB_PORT) || 5173,
     proxy: {
       '/api': { target: `http://localhost:${process.env.API_PORT || 4000}`, changeOrigin: true },
@@ -49,6 +52,7 @@ export default defineConfig({
   // `vite preview` (production build) needs its own proxy so the installable
   // PWA can reach the API while you test it locally.
   preview: {
+    host: true,
     port: Number(process.env.WEB_PORT) || 5173,
     proxy: {
       '/api': { target: `http://localhost:${process.env.API_PORT || 4000}`, changeOrigin: true },
