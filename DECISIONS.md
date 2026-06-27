@@ -3,6 +3,32 @@
 Deviations from the master spec and notable architectural choices, with reasons.
 Append-only; newest at top.
 
+## Phase 6
+
+- **Interview scoring is split:** *delivery* (filler/hedge/length) is a pure,
+  unit-tested function (`interviewAnalyze.ts`); *relevance + confidence + feedback
+  + the follow-up question* come from the LLM. More reliable than asking a small
+  model to count filler words.
+
+- **Voice input uses the browser-native Web Speech API** (free, no server, best in
+  Chrome) as an optional enhancement — the Interview Coach is text-first and works
+  without it.
+
+- **Resume = markdown `resume_version` rows** (no separate parent `resume` table) —
+  each generate/tailor creates a new version; simplest thing that captures history.
+
+- **Time Machine uses `repo.pushed_at` as the milestone proxy** (GitHub's sync
+  doesn't give us per-month language history); commit growth is cumulative by month.
+
+- **Settings danger-zone purge** runs `TRUNCATE … CASCADE` over content tables only
+  (never `app_user`, `setting`, or `_migrations`) and requires `confirm: "DELETE"`.
+  Enabled-modules are persisted in the `setting` table and filter the sidebar.
+
+- **Agent loop stays RAG-first.** The tool registry now spans all modules (12 tools:
+  search_knowledge, search_code, get_calendar, get_due_flashcards, get_expenses, …),
+  but the orchestrator still does reliable retrieve-then-generate; a native
+  multi-tool loop is the one remaining future enhancement.
+
 ## Phase 5
 
 - **Life Replay timeline is computed on the fly** via a `UNION ALL` across sources,

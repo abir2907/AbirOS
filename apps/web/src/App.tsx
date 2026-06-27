@@ -11,6 +11,7 @@ import { DeveloperPage } from '@/modules/developer/DeveloperPage';
 import { LearningPage } from '@/modules/learning/LearningPage';
 import { PlannerPage } from '@/modules/planner/PlannerPage';
 import { LifePage } from '@/modules/life/LifePage';
+import { SettingsPage } from '@/modules/settings/SettingsPage';
 import { REGISTERED_MODULES } from '@/modules/registry';
 import { Button } from '@/components/ui/button';
 
@@ -23,6 +24,7 @@ const LIVE = new Set([
   'learning',
   'planner',
   'life',
+  'settings',
 ]);
 
 export default function App() {
@@ -39,6 +41,7 @@ export default function App() {
           <Route path="learning" element={<LearningPage />} />
           <Route path="planner" element={<PlannerPage />} />
           <Route path="life" element={<LifePage />} />
+          <Route path="settings" element={<SettingsPage />} />
           {REGISTERED_MODULES.filter((m) => !LIVE.has(m.id)).map((m) => (
             <Route key={m.id} path={m.path.replace(/^\//, '')} element={<ModulePage module={m} />} />
           ))}

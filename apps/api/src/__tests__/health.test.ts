@@ -15,19 +15,15 @@ describe('GET /health', () => {
   });
 });
 
-describe('module stubs', () => {
+describe('module mounting', () => {
   const app = createApp();
 
-  it('mounts not-yet-built modules as scaffolded stubs', async () => {
-    const res = await request(app).get('/api/dashboard');
-    expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ module: 'dashboard', status: 'scaffolded' });
-  });
-
-  it('protects real modules with auth', async () => {
+  it('protects every feature module with auth', async () => {
     for (const path of [
       '/api/search',
       '/api/developer/repos',
+      '/api/developer/time-machine',
+      '/api/developer/resume',
       '/api/projects',
       '/api/tags',
       '/api/learning/flashcards/due',
@@ -39,6 +35,8 @@ describe('module stubs', () => {
       '/api/life/metrics',
       '/api/life/expenses',
       '/api/life/timeline',
+      '/api/dashboard/summary',
+      '/api/settings',
     ]) {
       const res = await request(app).get(path);
       expect(res.status, `${path} should require auth`).toBe(401);

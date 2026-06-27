@@ -176,6 +176,35 @@ export async function careerInsights(): Promise<CareerInsights> {
   };
 }
 
+export interface TimeMachine {
+  cumulative: { month: string; total: number }[];
+  milestones: { date: string; title: string; detail: string | null }[];
+}
+
+/** Developer Time Machine: cumulative commit growth + repo milestones over time. */
+export async function timeMachine(): Promise<TimeMachine> {
+  const pool = getPool();
+  const months = await pool.query<{ month: string; n: number }>(
+    `SELECT to_char(date_trunc('month', authored_at), 'YYYY-MM') AS month, count(*)::int AS n
+       FROM git_commit WHERE authored_at IS NOT NULL GROUP BY 1 ORDER BY 1`,
+  );
+  let running = 0;
+  const cumulative = months.rows.map((r) => ({ month: r.month, total: (running += r.n) }));
+
+  const milestones = (
+    await pool.query<{ full_name: string; primary_language: string | null; pushed_at: Date | null }>(
+      `SELECT full_name, primary_language, pushed_at FROM repo WHERE pushed_at IS NOT NULL
+        ORDER BY pushed_at ASC LIMIT 40`,
+    )
+  ).rows.map((r) => ({
+    date: r.pushed_at ? r.pushed_at.toISOString() : '',
+    title: r.full_name,
+    detail: r.primary_language,
+  }));
+
+  return { cumulative, milestones };
+}
+
 /** For the agent tool get_github_activity — commit count + recent commits in a window. */
 export async function recentActivity(sinceDays = 30) {
   const pool = getPool();

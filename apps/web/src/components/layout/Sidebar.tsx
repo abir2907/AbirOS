@@ -1,13 +1,24 @@
 import { NavLink } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { PanelLeftClose, PanelLeft, Hexagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useUiStore } from '@/store/ui';
 import { REGISTERED_MODULES } from '@/modules/registry';
+import { getSettings } from '@/lib/api';
+
+// Dashboard + Settings are always available regardless of toggles.
+const ALWAYS = new Set(['dashboard', 'settings']);
 
 export function Sidebar() {
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+  const settings = useQuery({ queryKey: ['settings'], queryFn: getSettings, staleTime: 60_000 });
+
+  const enabled = settings.data?.enabledModules;
+  const modules = enabled
+    ? REGISTERED_MODULES.filter((m) => ALWAYS.has(m.id) || enabled.includes(m.id))
+    : REGISTERED_MODULES;
 
   return (
     <aside
@@ -22,7 +33,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-2 scrollbar-thin">
-        {REGISTERED_MODULES.map((m) => {
+        {modules.map((m) => {
           const Icon = m.ui.icon;
           return (
             <NavLink

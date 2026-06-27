@@ -8,12 +8,13 @@ Single-user, self-hosted, and **$0 to run**: local AI via Ollama, vectors in
 Postgres via `pgvector`, files on local disk. The only cloud piece is Neon's free
 Postgres tier (swappable for local Postgres by changing one connection string).
 
-> **Status: Phase 5 complete.** On top of Phases 1–4, the **Life** module is live:
-> a metrics analytics dashboard with forecasting, an **Expense Detective** (CSV
-> import, category breakdown, subscription + unusual-charge detection, forecast),
-> **Life Replay** (a unified searchable timeline across every module), and a
-> **Personal Dataset Generator** (CSV/JSON export). Only **Phase 6** (polish)
-> remains (see [the build plan](#build-phases)).
+> **Status: Phase 6 complete — AbirOS is feature-complete.** Phase 6 added the
+> **Interview Coach** (text + optional voice, scored answers), **Resume Evolution**
+> (auto-build from GitHub + tailor to a job description), the **Developer Time
+> Machine** (replay your growth), a real aggregated **Dashboard**, and the
+> **Settings** module (providers, DB usage, enabled modules, export, danger zone).
+>
+> 📖 **New here? Read the [User Guide](USER_GUIDE.md)** — a full manual for every module.
 
 ---
 
@@ -225,6 +226,25 @@ After `pnpm db:migrate` adds the Life tables, the **Life** module has four tabs:
 
 New agent tools: `get_expenses`, `get_metrics`.
 
+## Phase 6 — what's new (final)
+
+After `pnpm db:migrate` adds the last tables:
+
+- **Developer → Interview Coach** — practice by topic; answers are scored on
+  relevance, confidence, and delivery (filler words), with feedback + a follow-up.
+  Optional **voice input** (Web Speech API, Chrome).
+- **Developer → Resume** — **generate** a resume from your GitHub activity, then
+  **tailor** it to a pasted job description; every version is saved.
+- **Developer → Time Machine** — replay your cumulative commit growth and project
+  milestones over time.
+- **Dashboard** — now a real cross-module summary (due cards, today's plan, recent
+  ingests, commits/30d, spend this month, goals) on top of system status.
+- **Settings** — AI provider info, GitHub connection status, **DB usage** row
+  counts (watch the Neon free tier), enable/disable modules, data export, and a
+  **danger zone** to purge all content.
+
+📖 See the full **[User Guide](USER_GUIDE.md)** for how to use every module.
+
 ## Scripts
 
 | Command | What it does |
@@ -250,8 +270,8 @@ Built incrementally; each phase ships fully and runnable before the next starts.
 2. **Second Brain + Developer** — screenshots/OCR, web archive, auto-tagging, project memory, GitHub sync, Code Historian, Career Analyzer. ✅
 3. **Learning** — summaries, flashcards (SM-2), quizzes, knowledge-map, gap detection. ✅
 4. **Planner** — daily plan (.ics import), goal simulator, university companion. ✅
-5. **Life** — metrics analytics, expense detective, life replay timeline, dataset export. ← *you are here*
-6. Polish (interview voice, resume tailoring, dashboards, forecasts).
+5. **Life** — metrics analytics, expense detective, life replay timeline, dataset export. ✅
+6. **Polish & advanced** — interview coach (+voice), resume evolution, time machine, dashboard, settings. ✅ **(feature-complete)**
 
 See `DECISIONS.md` for deviations from the spec and why.
 

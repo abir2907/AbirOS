@@ -19,11 +19,16 @@ import {
   FolderGit2,
   GitBranch,
   ExternalLink,
+  LayoutGrid,
+  MessageSquareText,
+  FileText,
+  History,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import {
   ApiRequestError,
   getAnalyzer,
@@ -32,10 +37,60 @@ import {
   syncGithub,
   type CodeHit,
 } from '@/lib/api';
+import { InterviewTab } from './InterviewTab';
+import { ResumeTab } from './ResumeTab';
+import { TimeMachineTab } from './TimeMachineTab';
 
 const ACCENT = 'hsl(243 80% 67%)';
 
+type DevTab = 'overview' | 'interview' | 'resume' | 'timemachine';
+
+const DEV_TABS: { id: DevTab; label: string; icon: typeof LayoutGrid }[] = [
+  { id: 'overview', label: 'Overview', icon: LayoutGrid },
+  { id: 'interview', label: 'Interview Coach', icon: MessageSquareText },
+  { id: 'resume', label: 'Resume', icon: FileText },
+  { id: 'timemachine', label: 'Time Machine', icon: History },
+];
+
 export function DeveloperPage() {
+  const [tab, setTab] = useState<DevTab>('overview');
+  return (
+    <div className="mx-auto max-w-5xl px-6 py-8">
+      <header className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Developer</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Sync GitHub to index your code, then analyze your growth, practice interviews, and build
+          your resume.
+        </p>
+      </header>
+
+      <div className="mb-6 flex gap-1 overflow-x-auto border-b">
+        {DEV_TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={cn(
+              'flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors',
+              tab === t.id
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <t.icon className="size-4" />
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'overview' && <DevOverview />}
+      {tab === 'interview' && <InterviewTab />}
+      {tab === 'resume' && <ResumeTab />}
+      {tab === 'timemachine' && <TimeMachineTab />}
+    </div>
+  );
+}
+
+function DevOverview() {
   const qc = useQueryClient();
   const analyzer = useQuery({ queryKey: ['analyzer'], queryFn: getAnalyzer, retry: false });
   const repos = useQuery({ queryKey: ['repos'], queryFn: listRepos, retry: false });
@@ -52,20 +107,13 @@ export function DeveloperPage() {
   const hasData = (repos.data?.repos.length ?? 0) > 0;
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-8">
-      <header className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Developer</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Sync GitHub to index your repos &amp; commits — then search your code history and see
-            your skill growth.
-          </p>
-        </div>
+    <div>
+      <div className="mb-4 flex justify-end">
         <Button onClick={() => sync.mutate()} disabled={sync.isPending}>
           {sync.isPending ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
           Sync GitHub
         </Button>
-      </header>
+      </div>
 
       {sync.isError && (
         <p className="mb-4 text-sm text-destructive">

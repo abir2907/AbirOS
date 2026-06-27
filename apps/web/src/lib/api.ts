@@ -456,3 +456,63 @@ export const getTimeline = (q?: string) =>
 // dataset
 export const getDataset = () => apiGet<{ rows: DatasetRow[] }>('/api/life/dataset');
 export const DATASET_CSV_URL = '/api/life/dataset?format=csv';
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
+export interface DashboardSummary {
+  dueFlashcards: number;
+  planToday: { count: number; items: { id: string; title: string; done: boolean }[] };
+  recentSources: SourceSummary[];
+  totalSources: number;
+  commits30d: number;
+  spendThisMonth: number;
+  goals: { total: number; active: number };
+}
+export const getDashboard = () => apiGet<DashboardSummary>('/api/dashboard/summary');
+
+// ── Settings ─────────────────────────────────────────────────────────────────
+export interface AppSettings {
+  providers: { llm: string; embedding: string; chatModel: string; embedModel: string; ollamaBaseUrl: string };
+  integrations: { github: boolean };
+  allModules: string[];
+  enabledModules: string[];
+}
+export const getSettings = () => apiGet<AppSettings>('/api/settings');
+export const getUsage = () => apiGet<{ usage: { table: string; rows: number }[] }>('/api/settings/usage');
+export const setEnabledModules = (modules: string[]) =>
+  apiPost<{ enabledModules: string[] }>('/api/settings/enabled-modules', { modules });
+export const purgeData = () => apiPost<{ ok: true }>('/api/settings/purge', { confirm: 'DELETE' });
+
+// ── Developer: Interview / Resume / Time Machine ─────────────────────────────
+export interface InterviewTurn {
+  id: string;
+  ord: number;
+  question: string;
+  answer: string | null;
+  scores: Record<string, number>;
+  feedback: string | null;
+}
+export const startInterview = (topic: string) =>
+  apiPost<{ sessionId: string; topic: string; question: string }>('/api/developer/interview/start', { topic });
+export const answerInterview = (id: string, answer: string) =>
+  apiPost<{ scores: Record<string, number>; feedback: string; nextQuestion: string }>(
+    `/api/developer/interview/${id}/answer`,
+    { answer },
+  );
+
+export interface ResumeVersionRow {
+  id: string;
+  label: string;
+  createdAt: string;
+}
+export const generateResume = () => apiPost<{ id: string; content: string }>('/api/developer/resume/generate');
+export const tailorResume = (id: string, jobDescription: string) =>
+  apiPost<{ id: string; content: string }>(`/api/developer/resume/${id}/tailor`, { jobDescription });
+export const listResumes = () => apiGet<{ versions: ResumeVersionRow[] }>('/api/developer/resume');
+export const getResume = (id: string) =>
+  apiGet<{ id: string; label: string; content: string }>(`/api/developer/resume/${id}`);
+
+export interface TimeMachineData {
+  cumulative: { month: string; total: number }[];
+  milestones: { date: string; title: string; detail: string | null }[];
+}
+export const getTimeMachine = () => apiGet<TimeMachineData>('/api/developer/time-machine');

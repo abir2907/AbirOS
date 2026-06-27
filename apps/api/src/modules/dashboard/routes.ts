@@ -1,4 +1,14 @@
-import { makeStubRouter } from '../_stub.js';
+import { Router, type Router as RouterType } from 'express';
+import { requireAuth } from '../../middleware/auth.js';
+import { dashboardSummary } from './service.js';
 
-// Phase 6: at-a-glance summary aggregating every module.
-export const dashboardRouter = makeStubRouter('dashboard', 6);
+export const dashboardRouter: RouterType = Router();
+dashboardRouter.use(requireAuth);
+
+dashboardRouter.get('/summary', async (_req, res, next) => {
+  try {
+    res.json(await dashboardSummary());
+  } catch (err) {
+    next(err);
+  }
+});
